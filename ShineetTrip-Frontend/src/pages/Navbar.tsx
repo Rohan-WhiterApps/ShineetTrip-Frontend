@@ -1,30 +1,12 @@
 import { ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export function Navbar() {
   return (
     <nav className="w-full">
-      {/* Top Info Bar */}
-      <div className="bg-slate-600 text-white px-6 py-2 flex justify-between items-center text-sm">
-        <div className="flex gap-6">
-          {/* Phone Number */}
-          <div className="flex items-center gap-2">
-            <span>📞</span>
-            <span>+91 96 *** 43210</span>
-          </div>
-          {/* Email */}
-          <div className="flex items-center gap-2">
-            <span>✉️</span>
-            <span>info@shineetrip.com</span>
-          </div>
-        </div>
-        {/* Tagline */}
-        <div className="text-amber-400 font-semibold">Himachal's Premier Luxury Travel Planner</div>
-      </div>
-
       {/* Main Navbar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
         {/* Logo Section */}
         <div className="flex items-center gap-3">
           <svg width="48" height="48" viewBox="0 0 48 48" className="flex-shrink-0">
@@ -83,9 +65,15 @@ export function Navbar() {
           </a>
         </div>
 
-        <Button className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-8 py-2 rounded">
+        {/* Reserve Now Button */}
+        <button
+          className="bg-gradient-to-r from-[#f5d67b] via-[#dcb253] to-[#b98a2a] 
+                     text-[#1b1b1b] font-semibold px-8 py-2 rounded-md shadow-md
+                     hover:brightness-110 transition-all duration-300 
+                     border border-[#e2c46e]"
+        >
           Reserve Now
-        </Button>
+        </button>
       </div>
     </nav>
   )

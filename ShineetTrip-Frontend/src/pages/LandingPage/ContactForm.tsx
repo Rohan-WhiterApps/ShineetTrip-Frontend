@@ -43,7 +43,7 @@ export default function ContactForm() {
           {/* Left Column */}
           <div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">Begin Your</h2>
-            <p className="text-2xl md:text-3xl text-accent font-light mb-8">Himalayan Journey</p>
+            <p className="text-2xl md:text-3xl text-[#D4A76A] font-light mb-8">Himalayan Journey</p>
             <p className="text-muted-foreground mb-8">
               Let our travel experts guide you through the planning process. Share your preferences and we'll create the
               perfect itinerary for your mountain adventure.

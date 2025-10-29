@@ -138,7 +138,7 @@ export default function LoginModal() {
           {/* Continue Button */}
           <Button
             onClick={handleContinue}
-            className="w-full h-12 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold text-lg rounded-lg transition-colors"
+            className="w-full h-12 bg-[#D4A76A] hover:bg-yellow-700 text-white font-semibold text-lg rounded-lg transition-colors"
           >
             Continue
           </Button>
