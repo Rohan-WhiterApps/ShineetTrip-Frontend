@@ -40,7 +40,7 @@ const rooms: Room[] = [
     options: [
       {
         title: "Room Only",
-        originalPrice: 3090,
+        originalPrice: 3790,
         discountedPrice: 2389,
         savingAmount: 1225,
         description: "Standard Rate"
