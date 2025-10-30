@@ -1,7 +1,8 @@
-
+"use client"
 
 import { useState } from "react"
 import { X, Mail } from "lucide-react"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,6 +12,11 @@ interface Country {
   code: string
   flag: string
   phone: string
+}
+
+interface LoginModalProps {
+  isOpen: boolean
+  onClose: () => void
 }
 
 const countries: Country[] = [
@@ -41,11 +47,10 @@ const FacebookLogo = () => (
   </svg>
 )
 
-export default function LoginModal() {
+export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0])
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
-  const [isOpen, setIsOpen] = useState(true)
 
   const handleContinue = () => {
     console.log("Continue with:", { country: selectedCountry, phone, email })
@@ -55,17 +60,12 @@ export default function LoginModal() {
     console.log("Login with:", provider)
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="p-0 border-0 max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900">Log in or sign up</h1>
-          <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={24} />
-          </button>
         </div>
 
         {/* Content */}
@@ -189,7 +189,7 @@ export default function LoginModal() {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

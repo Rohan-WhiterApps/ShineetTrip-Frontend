@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Calendar, MapPin, Users, X, Search } from "lucide-react"
+import { Calendar, MapPin, Users, Search } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -55,12 +55,12 @@ export default function JourneyPlanner() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-5">
+    <div className="w-full max-w-2xl mx-auto ">
       <div className="bg-gray-50 rounded-3xl p-8 shadow-lg border border-gray-200 relative">
         {/* Close Button */}
-        <button className="absolute top-6 right-6 text-gray-600 hover:text-gray-900 transition">
+        {/* <button className="absolute top-6 right-6 text-gray-600 hover:text-gray-900 transition">
           <X size={28} />
-        </button>
+        </button> */}
 
         {/* Header */}
         <div className="mb-8">

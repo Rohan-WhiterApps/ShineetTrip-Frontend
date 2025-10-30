@@ -118,7 +118,7 @@ export default function ContactForm() {
               onChange={handleChange}
               className="bg-card border-border min-h-32"
             />
-            <Button className="w-full bg-accent text-header-bg hover:bg-accent/90 py-6 text-lg">Send Inquiry</Button>
+            <Button className="w-full bg-[#C39B4D] text-header-bg hover:bg-[#C39B4D/10] py-6 text-lg">Send Inquiry</Button>
           </form>
         </div>
       </div>
