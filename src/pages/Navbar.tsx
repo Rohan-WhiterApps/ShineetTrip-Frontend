@@ -5,8 +5,10 @@ import { ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LoginModal } from "./Login/Loginpage"
 
+
 export function Navbar() {
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
+ 
+   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const scrollToSection = (id: string) => {
     const section = document.getElementById(id)
@@ -77,14 +79,14 @@ export function Navbar() {
         </div>
 
         <button
-          onClick={() => setIsLoginOpen(true)}
+          onClick={() => setIsModalOpen(true)}
           className="bg-[#D4AF64] text-white text-sm font-bold px-6 py-1.5 rounded-md shadow-md hover:brightness-110 transition-all duration-300 border border-[#e2c46e]"
         >
           Reserve Now
         </button>
       </nav>
 
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+     <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   )
 }

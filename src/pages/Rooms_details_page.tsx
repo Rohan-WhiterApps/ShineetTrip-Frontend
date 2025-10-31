@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 interface Amenity {
@@ -24,7 +24,7 @@ const amenities: Amenity[] = [
   },
   {
     category: "Internet",
-    items: ["Air-conditioning"],
+    items: ["High-speed Wi-Fi"],
   },
   {
     category: "Kitchen Features",
@@ -50,7 +50,7 @@ interface RoomDetailsModalProps {
 export function RoomDetailsModal({
   isOpen,
   onClose,
-  roomName = "Executive King Room",
+  roomName = "Standard Room",
   roomImages = [
     "/luxury-bedroom-with-king-bed-and-garden-view.jpg",
     "/luxury-bedroom-with-king-bed-and-garden-view.jpg",
@@ -70,90 +70,85 @@ export function RoomDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-0">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors z-50"
-          aria-label="Close modal"
-        >
-          <X className="w-6 h-6 text-gray-800" />
-        </button>
+      <DialogContent
+        className="
+          w-[4000px] max-w-[95vw] 
+          h-[90%] 
+          overflow-y-auto 
+          overflow-x-hidden 
+          p-0 border-0 bg-white rounded-lg"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-start px-8 py-4 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-gray-800 text-[18px] font-medium">{roomName}</h2>
+        </div>
 
-        <div className="bg-white">
-          {/* Main Image Gallery */}
-          <div className="relative w-full">
-            <div className="relative bg-gray-200 rounded-t-lg overflow-hidden aspect-video">
-              <img
-                src={roomImages[currentImageIndex] || "/placeholder.svg"}
-                alt="Room view"
-                className="w-full h-full object-cover"
-              />
+        {/* Image Slider */}
+        <div className="relative w-full bg-black/5">
+          <div className="relative overflow-hidden" style={{ height: "350px" }}>
+            <img
+              src={roomImages[currentImageIndex] || "/placeholder.svg"}
+              alt="Room"
+              className="w-full h-full object-cover"
+            />
 
-              {/* Navigation Arrows */}
-              <button
-                onClick={goToPrevious}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-3 hover:bg-gray-100 transition-colors z-10"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="w-6 h-6 text-gray-800" />
-              </button>
-
-              <button
-                onClick={goToNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-3 hover:bg-gray-100 transition-colors z-10"
-                aria-label="Next image"
-              >
-                <ChevronRight className="w-6 h-6 text-gray-800" />
-              </button>
-            </div>
-
-            {/* Thumbnail Gallery */}
-            <div className="flex gap-4 p-6 overflow-x-auto bg-white">
-              {roomImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-24 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                    index === currentImageIndex ? "border-gray-800" : "border-gray-300"
-                  }`}
-                >
-                  <img
-                    src={image || "/placeholder.svg"}
-                    alt={`Room thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            {/* Navigation Buttons */}
+            <button
+              onClick={goToPrevious}
+              className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 p-3 rounded-full shadow-md hover:bg-white transition"
+            >
+              <ChevronLeft className="text-gray-800 w-5 h-5" />
+            </button>
+            <button
+              onClick={goToNext}
+              className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 p-3 rounded-full shadow-md hover:bg-white transition"
+            >
+              <ChevronRight className="text-gray-800 w-5 h-5" />
+            </button>
           </div>
 
-          {/* Room Description */}
-          <div className="px-6 py-8">
-            <p className="text-gray-700 text-base leading-relaxed mb-8">
-              The {roomName} at Raj Bhavan Clarks Inn are lavish living spaces spanning 270 sq. ft. They are some of the
-              best rooms near Velachery, which can accommodate a maximum of 2 adults and 1 child. They come with the
-              option of a single bed or a king size bed. These fully air-conditioned rooms are loaded with modern
-              amenities such as a workstation with complimentary access to a stable high-speed internet connection, a 32
-              flat screen LCD TV, a tea & coffee maker, a hair dryer and an in-room minibar which is stacked with items
-              you can purchase. To enhance your stay in these Chennai rooms, we also offer a complimentary breakfast,
-              dedicated laundry service and our signature 24-hour room service.
-            </p>
+          {/* Thumbnails */}
+          <div className="flex gap-4 px-8 py-4 justify-start flex-wrap">
+            {roomImages.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentImageIndex(i)}
+                className={`relative w-[200px] h-[130px] rounded-md overflow-hidden border-2 transition-all ${
+                  i === currentImageIndex ? "border-yellow-500" : "border-transparent"
+                }`}
+              >
+                <img src={img} alt={`Room ${i + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
 
-            {/* Amenities Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {amenities.map((amenity, index) => (
-                <div key={index}>
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">{amenity.category}</h3>
-                  <ul className="space-y-2">
-                    {amenity.items.map((item, itemIndex) => (
-                      <li key={itemIndex} className="text-gray-600 text-sm">
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+        {/* Room Description */}
+        <div className="px-10 py-8 text-gray-800">
+          <p className="text-[15px] leading-relaxed mb-12">
+            The {roomName === "Standard Room" ? "Executive King Rooms" : roomName} at Raj Bhavan Clarks Inn are lavish
+            living spaces spanning 270 sq. ft. They are some of the best rooms near Velachery, which can accommodate a
+            maximum of 2 adults and 1 child. They come with the option of a single bed or a king size bed. These fully
+            air-conditioned rooms are loaded with modern amenities such as a workstation with complimentary access to a
+            stable high-speed internet connection, a 32" flat screen LCD TV, a tea & coffee maker, a hair dryer and an
+            in-room minibar which is stacked with items you can purchase. To enhance your stay in these Chennai rooms,
+            we also offer a complimentary breakfast, dedicated laundry service and our signature 24-hour room service.
+          </p>
+
+          {/* Amenities */}
+          <div className="grid grid-cols-3 gap-x-16 gap-y-10">
+            {amenities.map((amenity, i) => (
+              <div key={i}>
+                <h3 className="text-[15px] font-semibold mb-3">{amenity.category}</h3>
+                <ul className="space-y-1.5">
+                  {amenity.items.map((item, j) => (
+                    <li key={j} className="text-[14px] text-gray-600">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       </DialogContent>

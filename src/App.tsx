@@ -11,12 +11,15 @@ import RoomBookingPage from "./pages/Room_booking_page";
 
 import { HeroSection } from "./pages/LandingPage/HeroSection";
 import BookingPage from "./pages/Payment_Page";
-import { RoomDetailsModal } from "./pages/Rooms_details_page";
+
+// import { RoomDetailsModal } from "./pages/Rooms_details_page";
 
 
 
 
 const App: React.FC = () => {
+
+ 
   return (
 <>
       <Navbar />
@@ -49,7 +52,7 @@ const App: React.FC = () => {
   /> 
   <Route path="/room-booking" element={<RoomBookingPage />} />
   <Route path="/booking" element={<BookingPage />} />
-  <Route path="/roomdetails" element={<RoomDetailsModal/>} />
+  {/* <Route path="/roomdetails" element={<RoomDetailsModal/>} /> */}
   </Routes>
 
       <Footer />
