@@ -1,11 +1,8 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Phone, Mail, MapPin, Send } from "lucide-react"
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -25,7 +22,6 @@ export default function ContactForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log("Form submitted:", formData)
-    // Reset form
     setFormData({
       firstName: "",
       lastName: "",
@@ -37,89 +33,188 @@ export default function ContactForm() {
   }
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-20 bg-[#F5F5F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           {/* Left Column */}
           <div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">Begin Your</h2>
-            <p className="text-2xl md:text-3xl text-[#D4A76A] font-light mb-8">Himalayan Journey</p>
-            <p className="text-muted-foreground mb-8">
-              Let our travel experts guide you through the planning process. Share your preferences and we'll create the
-              perfect itinerary for your mountain adventure.
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-px w-12 bg-[#C9A86A]"></div>
+                <span className="text-[#C9A86A] text-sm tracking-widest uppercase">Get in Touch</span>
+              </div>
+              <h2 className="text-5xl md:text-6xl font-bold mb-2 text-[#2C3C3C]">Begin Your</h2>
+              <p className="text-5xl md:text-6xl text-[#C9A86A] font-light italic">Himalayan Journey</p>
+            </div>
+            
+            <p className="text-gray-600 text-lg mb-12 leading-relaxed">
+              Let our travel curators design your perfect escape. Whether it's a romantic getaway, family adventure, or spiritual journey, we craft experiences that resonate with your soul.
             </p>
+
+            {/* Contact Info Boxes */}
             <div className="space-y-6">
-              <div>
-                <p className="font-bold text-foreground mb-2">Call Us</p>
-                <p className="text-muted-foreground">+1 (555) 123-4567</p>
+              {/* Call Us */}
+              <div className="bg-[#FBF8F3] p-6 rounded-sm border-l-4 border-[#C9A86A]">
+                <div className="flex items-start gap-4">
+                  <div className="bg-[#C9A86A] p-3 rounded-full">
+                    <Phone className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-sm mb-1 uppercase tracking-wide">Call Us</p>
+                    <p className="text-[#2C3C3C] text-xl font-semibold mb-1">+91 98765 43210</p>
+                    <p className="text-gray-500 text-sm">Available 24/7</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-foreground mb-2">Email</p>
-                <p className="text-muted-foreground">info@shineetrip.com</p>
+
+              {/* Email Us */}
+              <div className="bg-[#FBF8F3] p-6 rounded-sm border-l-4 border-[#C9A86A]">
+                <div className="flex items-start gap-4">
+                  <div className="bg-[#C9A86A] p-3 rounded-full">
+                    <Mail className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-sm mb-1 uppercase tracking-wide">Email Us</p>
+                    <p className="text-[#2C3C3C] text-xl font-semibold mb-1">info@shineetrip.com</p>
+                    <p className="text-gray-500 text-sm">Response within 2 hours</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-foreground mb-2">Office Hours</p>
-                <p className="text-muted-foreground">Monday - Friday: 9AM - 6PM</p>
-                <p className="text-muted-foreground">Saturday - Sunday: 10AM - 4PM</p>
+
+              {/* Our Offices */}
+              <div className="bg-[#FBF8F3] p-6 rounded-sm border-l-4 border-[#C9A86A]">
+                <div className="flex items-start gap-4">
+                  <div className="bg-[#C9A86A] p-3 rounded-full">
+                    <MapPin className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-sm mb-1 uppercase tracking-wide">Our Offices</p>
+                    <p className="text-[#2C3C3C] text-xl font-semibold mb-1">Himachal | Mumbai</p>
+                    <p className="text-gray-500 text-sm">Chandigarh | Kathmandu</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Right Column - Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                placeholder="First Name"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                className="bg-card border-border"
-              />
-              <Input
-                placeholder="Last Name"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                className="bg-card border-border"
-              />
+          <div className="relative">
+            {/* Golden corner decorations */}
+            <div className="absolute -top-4 -right-4 w-20 h-20 border-t-4 border-r-4 border-[#C9A86A]"></div>
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 border-b-4 border-l-4 border-[#C9A86A]"></div>
+            
+            <div className="bg-white p-8 shadow-lg relative">
+              <div className="space-y-6">
+                {/* First Name & Last Name */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2 uppercase tracking-wide">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="John"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] focus:bg-white transition"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2 uppercase tracking-wide">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Doe"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] focus:bg-white transition"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Email Address */}
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2 uppercase tracking-wide">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="john@example.com"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] focus:bg-white transition"
+                    required
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2 uppercase tracking-wide">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] focus:bg-white transition"
+                    required
+                  />
+                </div>
+
+                {/* Preferred Destination */}
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2 uppercase tracking-wide">
+                    Preferred Destination
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Shimla, Manali, Nepal, Bhutan"
+                    name="destination"
+                    value={formData.destination}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] focus:bg-white transition"
+                  />
+                </div>
+
+                {/* Your Message */}
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2 uppercase tracking-wide">
+                    Your Message <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    placeholder="Tell us about your dream journey..."
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    rows={5}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] focus:bg-white transition resize-none"
+                    required
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleSubmit}
+                  className="w-full bg-[#E1BF79] hover:bg-[#B8975A] text-white py-4 text-lg font-medium transition flex items-center justify-center gap-2 shadow-md"
+                >
+                  Send Enquiry
+                  <Send size={20} />
+                </button>
+
+                <p className="text-center text-gray-500 text-sm mt-4">
+                  Our travel experts will respond within 2 hours
+                </p>
+              </div>
             </div>
-            <Input
-              type="email"
-              placeholder="Email Address"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="bg-card border-border"
-            />
-            <Input
-              type="tel"
-              placeholder="Phone Number"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="bg-card border-border"
-            />
-            <select
-              name="destination"
-              value={formData.destination}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-card border border-border rounded-md text-foreground"
-            >
-              <option value="">Select Destination</option>
-              <option value="shimla">Shimla & Manali</option>
-              <option value="ladakh">Ladakh & Kailash Valley</option>
-              <option value="kathmandu">Kathmandu & Pokhara</option>
-              <option value="bhutan">Bhutan & Paro Valley</option>
-            </select>
-            <Textarea
-              placeholder="Tell us about your travel preferences..."
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              className="bg-card border-border min-h-32"
-            />
-            <Button className="w-full bg-[#C39B4D] text-header-bg hover:bg-[#C39B4D/10] py-6 text-lg">Send Inquiry</Button>
-          </form>
+          </div>
         </div>
       </div>
     </section>

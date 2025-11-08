@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState} from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Loader2, X } from "lucide-react"
 import { signInWithFacebook, signInWithGoogle } from "@/Firebase/firebasevalidation"
@@ -39,23 +39,58 @@ const FacebookLogo = () => (
   </svg>
 )
 
+
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [socialLoading, setSocialLoading] = useState<string | null>(null)
 
   const handleGoogleLogin = async () => {
-    setSocialLoading("google")
-    try {
-      const user = await signInWithGoogle()
-      if (user) {
-        console.log("user details from google", user)
-        onClose()
-      }
-    } catch (error: any) {
-      alert("Google login failed. Please try again.")
-    } finally {
-      setSocialLoading(null)
-    }
+  setSocialLoading("google");
+  try {
+    const user = await signInWithGoogle();
+    if (!user) return;
+
+    console.log("user details from google", user.uid);
+
+    // ✅ Get a fresh ID token from Firebase
+    const token = await user.getIdToken();
+
+    // ✅ Save the token locally for reuse in future API calls
+    localStorage.setItem("shineetrip_token", token);
+    localStorage.setItem("shineetrip_uid", user.uid);
+
+    console.log("Access token saved to localStorage:", token);
+
+  const res = await fetch(
+  `http://46.62.160.188:3000/firebase-auth/set-roles/${user.uid}`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      roles: ["USER"],
+    }),
   }
+);
+
+  console.log(res);
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Failed to set roles: ${err}`);
+    }
+
+    console.log("✅ Roles assigned successfully");
+    onClose();
+  } catch (error: any) {
+    console.error("Google sign-in or role assignment failed:", error);
+    alert("Login failed. Please try again.");
+  } finally {
+    setSocialLoading(null);
+  }
+};
+
 
   const handleFacebookLogin = async () => {
     setSocialLoading("facebook")

@@ -1,197 +1,147 @@
 "use client"
 
-import type React from "react"
-
 import { Facebook, Instagram, Twitter, Linkedin, Phone, Mail, Send } from "lucide-react"
 import { useState } from "react"
 
 export default function Footer() {
   const [email, setEmail] = useState("")
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle subscription logic here
-    setEmail("")
+  const handleSubscribe = () => {
+    if (email) {
+      setEmail("")
+    }
   }
 
   return (
-    <footer className="bg-[#2C3C3C] text-white">
+    <footer className="bg-[#374646] text-white text-sm">
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           {/* Left Section - Logo & About */}
           <div>
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-4">
               <div className="flex items-center">
-                <div className="w-6 h-6 bg-amber-600 rounded-full mr-1"></div>
-                <span className="font-bold text-lg">
-                  SHINEE<span className="text-[#D4A76A]">TRIP</span>
-                </span>
+                <div className="relative">
+                  <div className="w-12 h-12 border-[3px] border-[#C9A86A] transform rotate-45"></div>
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#C9A86A] rounded-full"></div>
+                  <div className="absolute top-0 right-0 w-2 h-2 bg-[#2C3C3C] rounded-full"></div>
+                </div>
+                <div className="ml-3">
+                  <span className="font-bold text-xl text-[#C9A86A]">TRIP</span>
+                  <div className="h-0.5 bg-[#C9A86A] w-full mt-1"></div>
+                </div>
               </div>
             </div>
-            <p className="text-gray-300 text-sm mb-6 leading-relaxed">
-              Curating extraordinary journeys across India, Nepal & Bhutan. Where luxury meets adventure, and every
-              moment is crafted to perfection since 2010.
+
+            <p className="text-white text-xs mb-4 leading-relaxed">
+              Curating extraordinary journeys across India, Nepal & Bhutan since 2010.
             </p>
 
             {/* Contact Info */}
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center gap-3">
-                <Phone size={18} className="text-[#D4A76A]" />
-                <span className="text-sm">+91 98765 43210</span>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2">
+                <Phone size={14} className="text-[#C9A86A]" />
+                <span>+91 98765 43210</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Mail size={18} className="text-[#D4A76A]" />
-                <span className="text-sm">info@shineetrip.com</span>
+              <div className="flex items-center gap-2">
+                <Mail size={14} className="text-[#C9A86A]" />
+                <span>info@shineetrip.com</span>
               </div>
             </div>
 
             {/* Social Icons */}
-            <div className="flex gap-3">
-              <a href="#" className="border border-gray-400 p-2 hover:border-amber-600 transition">
-                <Facebook size={18} />
-              </a>
-              <a href="#" className="border border-gray-400 p-2 hover:border-amber-600 transition">
-                <Instagram size={18} />
-              </a>
-              <a href="#" className="border border-gray-400 p-2 hover:border-amber-600 transition">
-                <Twitter size={18} />
-              </a>
-              <a href="#" className="border border-gray-400 p-2 hover:border-amber-600 transition">
-                <Linkedin size={18} />
-              </a>
+            <div className="flex gap-2">
+              {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className="border border-white p-1.5 hover:border-[#C9A86A] transition text-white"
+                >
+                  <Icon size={14} />
+                </a>
+              ))}
             </div>
           </div>
 
           {/* Our Offices */}
           <div>
-            <h3 className="text-[#D4A76A] font-semibold mb-6 pb-2 border-b border-amber-600 inline-block">
+            <h3 className="text-[#C9A86A] font-semibold mb-3 text-xs tracking-wide">
               OUR OFFICES
+              <div className="h-0.5 bg-[#C9A86A] w-10 mt-1"></div>
             </h3>
-            <ul className="space-y-3 text-sm text-gray-300">
-              <li>
-                <a href="#" className="hover:text-[#D4A76A] transition">
-                  Himachal Pradesh
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-[#D4A76A] transition">
-                  Mumbai, Maharashtra
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-[#D4A76A] transition">
-                  Chandigarh, Punjab
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-[#D4A76A] transition">
-                  Kathmandu, Nepal
-                </a>
-              </li>
+            <ul className="space-y-2">
+              {["Himachal Pradesh", "Mumbai, Maharashtra", "Chandigarh, Punjab", "Kathmandu, Nepal"].map((place, i) => (
+                <li key={i}>
+                  <a href="#" className="hover:text-[#C9A86A] transition">{place}</a>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Destinations */}
           <div>
-            <h3 className="text-[#D4A76A] font-semibold mb-6 pb-2 border-b border-amber-600 inline-block">
+            <h3 className="text-[#C9A86A] font-semibold mb-3 text-xs tracking-wide">
               DESTINATIONS
+              <div className="h-0.5 bg-[#C9A86A] w-10 mt-1"></div>
             </h3>
-            <ul className="space-y-3 text-sm text-gray-300">
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  Shimla & Manali
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  Kasol & Kullu
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  Nepal Tours
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  Bhutan Packages
-                </a>
-              </li>
+            <ul className="space-y-2">
+              {["Shimla & Manali", "Kasol & Kullu", "Nepal Tours", "Bhutan Packages"].map((dest, i) => (
+                <li key={i}>
+                  <a href="#" className="hover:text-[#C9A86A] transition">{dest}</a>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-[#D4A76A] font-semibold mb-6 pb-2 border-b border-amber-600 inline-block">
+            <h3 className="text-[#C9A86A] font-semibold mb-3 text-xs tracking-wide">
               QUICK LINKS
+              <div className="h-0.5 bg-[#C9A86A] w-10 mt-1"></div>
             </h3>
-            <ul className="space-y-3 text-sm text-gray-300">
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  Our Services
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  Testimonials
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-amber-600 transition">
-                  Contact
-                </a>
-              </li>
+            <ul className="space-y-2">
+              {["About Us", "Our Services", "Testimonials", "Contact"].map((link, i) => (
+                <li key={i}>
+                  <a href="#" className="hover:text-[#C9A86A] transition">{link}</a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        {/* Stay Connected Section */}
-        <div className="mb-12 pb-12 border-b border-gray-600">
-          <h3 className="text-[#D4A76A] font-semibold mb-4 pb-2 border-b border-amber-600 inline-block">
+        {/* Stay Connected */}
+        <div className="mb-8">
+          <h3 className="text-white font-semibold mb-2 text-xs tracking-wide">
             STAY CONNECTED
+            <div className="h-0.5 bg-[#C9A86A] w-10 mt-1"></div>
           </h3>
-          <p className="text-gray-300 text-sm mb-4">Subscribe to receive exclusive travel offers and inspiration.</p>
-          <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md">
+          <p className="text-xs mb-3">Subscribe for exclusive travel offers and inspiration.</p>
+          <div className="flex max-w-md">
             <input
               type="email"
               placeholder="Your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-4 py-3 bg-transparent border border-gray-400 text-white placeholder-gray-400 focus:outline-none focus:border-amber-600"
-              required
+              className="flex-1 px-3 py-2 bg-white border border-gray-300 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] text-sm"
             />
             <button
-              type="submit"
-              className="bg-[#D4A76A] hover:bg-amber-700 px-6 py-3 transition flex items-center justify-center"
+              onClick={handleSubscribe}
+              className="bg-[#C9A86A] hover:bg-[#B8975A] px-4 py-2 transition flex items-center justify-center text-white"
             >
-              <Send size={18} />
+              <Send size={14} />
             </button>
-          </form>
+          </div>
         </div>
       </div>
 
       {/* Bottom Footer */}
-      <div className="border-t border-gray-600 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-            <p>© 2025 Shinee Trip. All Rights Reserved. | Crafted with passion for travel.</p>
-            <div className="flex gap-6 mt-4 md:mt-0">
-              <a href="#" className="hover:text-amber-600 transition">
-                Privacy Policy
-              </a>
-              <a href="#" className="hover:text-amber-600 transition">
-                Terms of Service
-              </a>
-              <a href="#" className="hover:text-amber-600 transition">
-                Sitemap
-              </a>
-            </div>
+      <div className="border-t border-gray-400 py-4">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-xs text-white space-y-2 md:space-y-0">
+          <p>© 2025 Shinee Trip. All Rights Reserved.</p>
+          <div className="flex gap-4">
+            {["Privacy Policy", "Terms of Service", "Sitemap"].map((item, i) => (
+              <a key={i} href="#" className="hover:text-[#C9A86A] transition">{item}</a>
+            ))}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app"
+import { initializeApp } from "firebase/app";
 import {
   getAuth,
   RecaptchaVerifier,
@@ -6,30 +6,42 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   OAuthProvider,
-} from "firebase/auth"
+  signInWithPopup,
+} from "firebase/auth";
 
 // ✅ Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDrwzG0UbtGuC4hFZBGreN5nwwEWP26ndM",
-  authDomain: "shineetrip-cbc33.firebaseapp.com",
-  projectId: "shineetrip-cbc33",
-  storageBucket: "shineetrip-cbc33.firebasestorage.app", // 🔹 fixed storage bucket URL
-  messagingSenderId: "265250808943",
-  appId: "1:265250808943:web:313fd00e039c74ce29999a",
-  measurementId: "G-CDEB9KS3KD",
-}
+  apiKey: "AIzaSyDwsybOrtnQ_gilEznM1ov-R3pTkD3rtVI",
+  authDomain: "shineetrip-46caf.firebaseapp.com",
+  projectId: "shineetrip-46caf",
+  storageBucket: "shineetrip-46caf.firebasestorage.app",
+  messagingSenderId: "476596177275",
+  appId: "1:476596177275:web:cd7a81620917238edd15de",
+  measurementId: "G-C1DR9TXZLW"
+};
 
 // 🔹 Initialize Firebase
-const app = initializeApp(firebaseConfig)
+const app = initializeApp(firebaseConfig);
 
 // 🔹 Authentication instance
-export const auth = getAuth(app)
-auth.useDeviceLanguage()
+export const auth = getAuth(app);
+auth.useDeviceLanguage();
 
 // 🔹 Social providers
-export const googleProvider = new GoogleAuthProvider()
-export const facebookProvider = new FacebookAuthProvider()
-export const appleProvider = new OAuthProvider("apple.com")
+export const googleProvider = new GoogleAuthProvider();
+export const facebookProvider = new FacebookAuthProvider();
+export const appleProvider = new OAuthProvider("apple.com");
 
 // 🔹 OTP helpers
-export { RecaptchaVerifier, signInWithPhoneNumber }
+export { RecaptchaVerifier, signInWithPhoneNumber };
+
+// 🔹 Google Sign-In function
+export const handleGoogleSignIn = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const user = result.user;
+    console.log("✅ Signed in:", user);
+  } catch (error) {
+    console.error("❌ Error during Google sign-in:", error);
+  }
+};

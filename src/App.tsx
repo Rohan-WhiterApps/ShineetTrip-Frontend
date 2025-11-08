@@ -3,14 +3,16 @@ import { Navbar } from "./pages/Navbar";
 import Footer from "./pages/LandingPage/Footer";
 
 import DiscoverAdventure from "./pages/LandingPage/Dsicoveradventure";
-import Difference from "./pages/LandingPage/Differene";
 
 import Testimonials from "./pages/LandingPage/Testimonials";
 import ContactForm from "./pages/LandingPage/ContactForm";
 import RoomBookingPage from "./pages/Room_booking_page";
 
-import { HeroSection } from "./pages/LandingPage/HeroSection";
 import BookingPage from "./pages/Payment_Page";
+import HotelListingPage from "./pages/Hotel_listing_page";
+import Tourspackages from "./pages/Tour_packages";
+import HeroSection from "./pages/LandingPage/HeroSection";
+import AboutPage from "./AboutPage";
 
 // import { RoomDetailsModal } from "./pages/Rooms_details_page";
 
@@ -33,26 +35,25 @@ const App: React.FC = () => {
         </section>
 
         <section id="adventure">
-          <DiscoverAdventure />
+          {<DiscoverAdventure /> }
         </section>
 
-        <section id="difference">
-          <Difference />
-        </section>
 
         <section id="testimonials">
-          <Testimonials />
+          { <Testimonials /> }
         </section>
 
         <section id="contact">
-          <ContactForm />
+          { <ContactForm /> }
         </section>
       </>
     }
   /> 
   <Route path="/room-booking" element={<RoomBookingPage />} />
   <Route path="/booking" element={<BookingPage />} />
-  {/* <Route path="/roomdetails" element={<RoomDetailsModal/>} /> */}
+  <Route path="/hotellists" element={<HotelListingPage/>} />
+  <Route path="/tours" element={<Tourspackages/>}/>
+  <Route path='/about' element={<AboutPage/>}/>
   </Routes>
 
       <Footer />
