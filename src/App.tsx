@@ -6,15 +6,13 @@ import DiscoverAdventure from "./pages/LandingPage/Dsicoveradventure";
 
 import Testimonials from "./pages/LandingPage/Testimonials";
 import ContactForm from "./pages/LandingPage/ContactForm";
-import RoomBookingPage from "./pages/Room_booking_page";
+import RoomBookingPage from "./pages/Properties_details";
 
 import BookingPage from "./pages/Payment_Page";
 import HotelListingPage from "./pages/Hotel_listing_page";
 import Tourspackages from "./pages/Tour_packages";
 import HeroSection from "./pages/LandingPage/HeroSection";
 import AboutPage from "./AboutPage";
-
-// import { RoomDetailsModal } from "./pages/Rooms_details_page";
 
 
 
@@ -53,7 +51,8 @@ const App: React.FC = () => {
   <Route path="/booking" element={<BookingPage />} />
   <Route path="/hotellists" element={<HotelListingPage/>} />
   <Route path="/tours" element={<Tourspackages/>}/>
-  <Route path='/about' element={<AboutPage/>}/>
+  
+    <Route path='/about' element={<AboutPage/>}/>
   </Routes>
 
       <Footer />
