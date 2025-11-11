@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MapPin, Calendar, Users, Search, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
-import bannervideo from "../../assets/banner-video.mp4"
+import bannervideo from "../../assets/travel.mp4"
 
 
 export default function HeroSection() {
