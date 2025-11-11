@@ -122,7 +122,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h1 className="text-xl font-semibold text-gray-900">Log in or sign up</h1>
           <button onClick={onClose} className="text-gray-600 hover:text-gray-900">
-            <X className="w-5 h-5" />
           </button>
         </div>
 
