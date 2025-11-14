@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 interface Destination {
   name: string
@@ -7,7 +7,12 @@ interface Destination {
 }
 
 export default function PopularDestinations() {
-  const destinations: Destination[] = [
+  const [destinations, setDestinations] = useState<Destination[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // 🧠 Fallback (dummy) destinations to maintain UI structure
+  const fallbackDestinations: Destination[] = [
     {
       name: "Mumbai",
       description: "Commercial and Financial Capital of India",
@@ -55,149 +60,95 @@ export default function PopularDestinations() {
     }
   ]
 
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const baseUrl = import.meta.env.BACKENDURL
+        console.log("url", baseUrl);
+        const res = await fetch("http://46.62.160.188:3000/states?isActive=true")
+        if (!res.ok) throw new Error("Failed to fetch destinations")
+        const data = await res.json()
+
+        // Transform API data into the same structure as fallbackDestinations
+        const apiDestinations: Destination[] = data.map((item: any) => ({
+          name: item.name,
+          description: item.tagline || "",
+          image: item.img_url || ""
+        }))
+
+        //setDestinations(apiDestinations);
+
+        // Fill the rest of slots with fallback destinations if API has fewer
+        const finalData = [...apiDestinations, ...fallbackDestinations].slice(0, 9)
+        setDestinations(finalData)
+      } catch (err: any) {
+        console.error(err)
+        //setDestinations(fallbackDestinations)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStates()
+  }, [])
+
+  if (loading) return <div className="text-center py-16 text-gray-600">Loading destinations...</div>
+
   return (
     <div className="w-full bg-gray-50 py-16 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-2">Popular Destinations</h2>
-          <p className="text-gray-600 text-base">We have selected some best locations around the world for you.</p>
+          <p className="text-gray-600 text-base">
+            We have selected some best locations around the world for you.
+          </p>
         </div>
 
         {/* Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column - Large Cards */}
+          {/* Left Column */}
           <div className="flex flex-col gap-6">
-            {/* Mumbai - Large */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-64">
-              <img
-                src={destinations[0].image}
-                alt={destinations[0].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[0].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[0].description}</p>
-              </div>
-            </div>
-
-            {/* Kerala - Large */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-64">
-              <img
-                src={destinations[3].image}
-                alt={destinations[3].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[3].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[3].description}</p>
-              </div>
-            </div>
-
-            {/* Nepal - Large */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-64">
-              <img
-                src={destinations[5].image}
-                alt={destinations[5].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[5].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[5].description}</p>
-              </div>
-            </div>
-
-            {/* Dubai - Large */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-64">
-              <img
-                src={destinations[7].image}
-                alt={destinations[7].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[7].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[7].description}</p>
-              </div>
-            </div>
+            <Card destination={destinations[0]} size="extra-large" />
+            <Card destination={destinations[2]} size="large" />
+            <Card destination={destinations[4]} size="medium" />
+            <Card destination={destinations[6]} size="extra-large" />
           </div>
 
-          {/* Right Column - Mixed Sizes */}
+          {/* Right Column */}
           <div className="flex flex-col gap-6">
-            {/* Paris - Medium */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-40">
-              <img
-                src={destinations[1].image}
-                alt={destinations[1].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[1].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[1].description}</p>
-              </div>
-            </div>
-
-            {/* Kyoto - Medium */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-40">
-              <img
-                src={destinations[2].image}
-                alt={destinations[2].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[2].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[2].description}</p>
-              </div>
-            </div>
-
-            {/* Hyderabad - Large */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-64">
-              <img
-                src={destinations[4].image}
-                alt={destinations[4].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[4].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[4].description}</p>
-              </div>
-            </div>
-
-            {/* New York - Medium */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-40">
-              <img
-                src={destinations[6].image}
-                alt={destinations[6].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[6].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[6].description}</p>
-              </div>
-            </div>
-
-            {/* London - Medium */}
-            <div className="relative group cursor-pointer overflow-hidden rounded-2xl h-40">
-              <img
-                src={destinations[8].image}
-                alt={destinations[8].name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-bold mb-1">{destinations[8].name}</h3>
-                <p className="text-sm text-gray-200">{destinations[8].description}</p>
-              </div>
-            </div>
+            <Card destination={destinations[1]} size="medium" />
+            <Card destination={destinations[3]} size="large" />
+            <Card destination={destinations[5]} size="medium" />
+            <Card destination={destinations[7]} size="extra-large" />
+            <Card destination={destinations[8]} size="medium" />
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ✨ Reusable Card Component
+function Card({ destination, size }: { destination: Destination; size: "extra-large" | "large" | "medium" }) {
+  if (!destination) return null
+  const heightClass = 
+    size === "extra-large" ? "h-120" : 
+    size === "large" ? "h-75" : 
+    "h-55"
+
+  return (
+    <div className={`relative group cursor-pointer overflow-hidden rounded-2xl ${heightClass}`}>
+      <img
+        src={destination.image}
+        alt={destination.name}
+        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+      <div className="absolute bottom-6 left-6 text-white">
+        <h3 className="text-2xl font-bold mb-1">{destination.name}</h3>
+        <p className="text-sm text-gray-200">{destination.description}</p>
       </div>
     </div>
   )
