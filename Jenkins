@@ -16,7 +16,7 @@ pipeline {
         stage('Checkout Flutter Frontend Code') {
             steps {
                 // !!! IMPORTANT: Replace this URL with your actual Flutter frontend repository !!!
-                git branch: 'main', url: 'https://github.com/Rohan-WhiterApps/ShineeTrip-React.git', credentialsId: 'github_cred'
+                git branch: 'master', url: 'https://github.com/Rohan-WhiterApps/ShineeTrip-React.git', credentialsId: 'github_cred'
             }
         }
 
