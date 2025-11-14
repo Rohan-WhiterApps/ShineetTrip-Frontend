@@ -13,6 +13,7 @@ import HotelListingPage from "./pages/Hotel_listing_page";
 import Tourspackages from "./pages/Tour_packages";
 import HeroSection from "./pages/LandingPage/HeroSection";
 import AboutPage from "./AboutPage";
+import PackagesPage from "./toursPackages/Pacakges";
 
 
 
@@ -51,6 +52,8 @@ const App: React.FC = () => {
   <Route path="/booking" element={<BookingPage />} />
   <Route path="/hotellists" element={<HotelListingPage/>} />
   <Route path="/tours" element={<Tourspackages/>}/>
+  
+    <Route path='/packages' element={<PackagesPage/>}/>
   
     <Route path='/about' element={<AboutPage/>}/>
   </Routes>
