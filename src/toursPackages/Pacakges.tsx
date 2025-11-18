@@ -1,22 +1,40 @@
-import React from 'react';
-import { Home, Calendar, Users, Search, SlidersHorizontal, Briefcase } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Briefcase } from "lucide-react";
 
+/* ---------------- API INTERFACE ---------------- */
+interface ApiPackage {
+  id: number;
+  title: string;
+  shortDescription: number;
+  description: string;
+  heroImage: string;
+  galleryImages: string[];
+  highlights: string[];
+  nights: string;
+  pricePerPerson: string;
+  totalPrice: string;
+  emiAmount: string;
+  property: {
+    name: string;
+    city: string;
+    country: string;
+    rating: string;
+  };
+  includedServices: string[];
+}
+
+/* ---------------- UI INTERFACE ---------------- */
 interface Package {
   id: number;
   title: string;
   badge: string;
   image: string;
-  features: {
-    airportPickup: boolean;
-    selectedMeals: boolean;
-    starHotel: number;
-    activities: number;
-  };
+
+  features: string[]; // ← includedServices
+  amenities: string[]; // ← highlights
+
   location: string;
-  amenities: {
-    honeymoonHamper: boolean;
-    northGoaSightseeing: boolean;
-  };
+
   pricing: {
     emiStartsAt: number;
     totalPrice: number;
@@ -24,44 +42,41 @@ interface Package {
   };
 }
 
-const packageData: Package = {
-  id: 1,
-  title: "Romantic Beachfront Goa Retreat",
-  badge: "4N/5D",
-  image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
-  features: {
-    airportPickup: true,
-    selectedMeals: true,
-    starHotel: 4,
-    activities: 2,
-  },
-  location: "Romantic Beachfront Goa Retreat",
-  amenities: {
-    honeymoonHamper: true,
-    northGoaSightseeing: true,
-  },
-  pricing: {
-    emiStartsAt: 1903,
-    totalPrice: 19506,
-    pricePerPerson: 9953,
-  },
+/* ---------------- TRANSFORM FUNCTION ---------------- */
+const transformApiPackage = (api: ApiPackage): Package => {
+  return {
+    id: api.id,
+    title: api.title,
+    badge: api.nights + "N" || "4N",
+    image: api.heroImage || "hello ji no image",
+
+    features: api.includedServices || [],
+    amenities: api.highlights || [],
+
+    location: api.property
+      ? `${api.property.city}, ${api.property.country}`
+      : "Unknown",
+
+    pricing: {
+      emiStartsAt: Number(api.emiAmount || 0),
+      totalPrice: Number(api.totalPrice),
+      pricePerPerson: Number(api.pricePerPerson),
+    },
+  };
 };
 
+/* ---------------- CARD COMPONENT ---------------- */
 const PackageCard: React.FC<{ pkg: Package }> = ({ pkg }) => {
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
-      {/* Image Section */}
-      <div className="relative">
-        <img 
-          src={pkg.image} 
-          alt={pkg.title}
-          className="w-full h-64 object-cover"
-        />
-      </div>
+      <img
+        src={pkg.image}
+        alt={pkg.title}
+        className="w-full h-64 object-cover"
+      />
 
-      {/* Content Section */}
       <div className="p-6">
-        {/* Title and Badge */}
+        {/* Title + Badge */}
         <div className="flex items-start justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900 flex-1">
             {pkg.title}
@@ -71,28 +86,14 @@ const PackageCard: React.FC<{ pkg: Package }> = ({ pkg }) => {
           </div>
         </div>
 
-        {/* Features Grid */}
+        {/* Included Services */}
         <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6">
-          <div className="flex items-center gap-2.5 text-gray-600">
-            <Briefcase className="w-5 h-5 text-gray-500" />
-            <span className="text-base">Airport Pickup & Drop</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-gray-600">
-            <Briefcase className="w-5 h-5 text-gray-500" />
-            <span className="text-base">Selected Meals</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-gray-600">
-            <Briefcase className="w-5 h-5 text-gray-500" />
-            <span className="text-base">{pkg.features.starHotel} Start Hotel</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-gray-600">
-            <Briefcase className="w-5 h-5 text-gray-500" />
-            <span className="text-base">{pkg.features.activities} Activities</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-gray-600">
-            <Briefcase className="w-5 h-5 text-gray-500" />
-            <span className="text-base">{pkg.features.activities} Activities</span>
-          </div>
+          {pkg.features.map((service, i) => (
+            <div key={i} className="flex items-center gap-2.5 text-gray-600">
+              <Briefcase className="w-5 h-5 text-gray-500" />
+              <span className="text-base">{service}</span>
+            </div>
+          ))}
         </div>
 
         {/* Location */}
@@ -100,19 +101,22 @@ const PackageCard: React.FC<{ pkg: Package }> = ({ pkg }) => {
           {pkg.location}
         </div>
 
-        {/* Amenities */}
+        {/* Amenities (highlights) */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg">
-            <Briefcase className="w-5 h-5 text-gray-700" />
-            <span className="text-base font-medium text-teal-600">Honeymoon Hamper</span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg">
-            <Briefcase className="w-5 h-5 text-gray-700" />
-            <span className="text-base font-medium text-teal-600">North Goa Sightseeing</span>
-          </div>
+          {pkg.amenities.map((amenity, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg"
+            >
+              <Briefcase className="w-5 h-5 text-gray-700" />
+              <span className="text-base font-medium text-teal-600">
+                {amenity}
+              </span>
+            </div>
+          ))}
         </div>
 
-        {/* Pricing Section */}
+        {/* Pricing */}
         <div className="flex items-end justify-between pt-4">
           <div>
             <div className="text-base text-gray-600 mb-1">No Cost EMI at</div>
@@ -120,6 +124,7 @@ const PackageCard: React.FC<{ pkg: Package }> = ({ pkg }) => {
               ₹ {pkg.pricing.emiStartsAt.toLocaleString()}/month
             </div>
           </div>
+
           <div className="text-right">
             <div className="text-base text-gray-600 mb-2">
               Total Price ₹ {pkg.pricing.totalPrice.toLocaleString()}
@@ -134,86 +139,61 @@ const PackageCard: React.FC<{ pkg: Package }> = ({ pkg }) => {
   );
 };
 
+/* ---------------- MAIN PAGE ---------------- */
 const PackagesPage: React.FC = () => {
-  // Create 10 packages for the grid
-  const packages = Array(10).fill(packageData).map((pkg, index) => ({
-    ...pkg,
-    id: index + 1,
-  }));
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const token = localStorage.getItem("shineetrip_token");
+
+        const res = await fetch("http://46.62.160.188:3000/holiday-packages", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        console.log("API:", data.items);
+
+        if (data?.items) {
+          const mapped = data.items.map((pkg: ApiPackage) =>
+            transformApiPackage(pkg)
+          );
+          setPackages(mapped);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, []);
 
   return (
-    <div className="min-h-screen mt-18 bg-gray-50">
-      {/* Search Bar Section */}
-      <div className="bg-white shadow-sm py-4 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center gap-3">
-            {/* Search Container */}
-            <div className="flex items-center bg-white border-2 border-gray-200 rounded-full px-6 py-3 shadow-sm">
-              {/* Location */}
-              <div className="flex items-center gap-2 pr-4 border-r border-gray-200">
-                <Home className="w-5 h-5 text-yellow-600" />
-                <span className="text-sm font-semibold text-gray-800">Goa</span>
-              </div>
-              
-              {/* Date */}
-              <div className="flex items-center gap-2 px-4 border-r border-gray-200">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-semibold text-gray-800">11- 16 Nov</span>
-              </div>
-              
-              {/* Guests */}
-              <div className="flex items-center gap-2 px-4">
-                <Users className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-semibold text-gray-800">3 guests</span>
-              </div>
-              
-              {/* Search Button */}
-              <button className="ml-2 bg-yellow-500 hover:bg-yellow-600 rounded-full p-2 transition-colors">
-                <Search className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            {/* Filters Button */}
-            <button className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors">
-              <SlidersHorizontal className="w-5 h-5" />
-              Filters
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen mt-16 bg-gray-50">
+      {/* Header */}
+      <div className="bg-white py-4 px-6 border-b">
+        <h1 className="text-2xl font-bold">All Packages</h1>
+        <p className="text-sm text-gray-500">Experience Beach & Sunsets</p>
       </div>
 
-      {/* Main Content */}
-      <div className="">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 py-4 px-6">
-          <h1 className="text-2xl font-bold text-gray-800">Goa Packages</h1>
-          <p className="text-sm text-gray-600 mt-1">Experience Beach & Sunsets</p>
-        </div>
-
-        {/* Tabs Navigation */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="px-6 py-3">
-            <div className="flex gap-4 overflow-x-auto">
-              {Array(7).fill('Most Popular').map((tab, index) => (
-                <button
-                  key={index}
-                  className="whitespace-nowrap px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-800 transition-colors"
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {loading ? (
+          <div className="text-center py-20 text-gray-600">Loading…</div>
+        ) : packages.length === 0 ? (
+          <div className="text-center py-20 text-gray-600">
+            No packages available
           </div>
-        </div>
-
-        {/* Packages Grid */}
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {packages.map((pkg) => (
               <PackageCard key={pkg.id} pkg={pkg} />
             ))}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
