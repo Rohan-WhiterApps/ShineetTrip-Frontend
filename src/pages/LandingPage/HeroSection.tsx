@@ -145,7 +145,7 @@ export default function HeroSection() {
   return (
     <div className="w-full min-h-screen bg-gray-50 font-sans">
       {/* HERO SECTION */}
-      <div className="relative w-full h-[90vh] overflow-hidden">
+      <div className="relative w-full h-[100vh] overflow-hidden">
         {/* Background Image */}
         <img 
           src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80" 
@@ -154,11 +154,11 @@ export default function HeroSection() {
         />
         <div className="absolute inset-0 bg-black/20" />
         
-        <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
+        <div className="relative z-10 h-full flex flex-col px-4">
           
           {/* Search Widget Container */}
           {isSearchVisible && (
-            <div className="w-full max-w-5xl bg-black/60 backdrop-blur-md rounded-3xl p-8 text-white relative animate-in fade-in zoom-in duration-300">
+            <div className="w-full max-w-5xl mx-auto bg-black/60 backdrop-blur-md rounded-3xl p-8 text-white relative animate-in fade-in zoom-in duration-300 mt-20">
               
               {/* Close Button */}
               <button 
@@ -307,7 +307,7 @@ export default function HeroSection() {
       {/* COMBINED STATS + CATEGORIES SECTION - Single White Card */}
       <div className="pb-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-20 relative z-20">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-52 relative z-20">
           
             {/* STATS BAR - Overlapping Top Edge */}
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4">

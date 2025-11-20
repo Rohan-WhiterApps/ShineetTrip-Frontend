@@ -11,51 +11,51 @@ export default function PopularDestinations() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 🧠 Fallback (dummy) destinations to maintain UI structure
+  // 🧠 Fallback (dummy) destinations - exact order for the pattern
   const fallbackDestinations: Destination[] = [
     {
       name: "Mumbai",
-      description: "Commercial and Financial Capital of India",
+      description: "The glorious city of Nizam's",
       image: "https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=800&q=80"
     },
     {
-      name: "Paris",
-      description: "The city of love",
+      name: "New York",
+      description: "The glorious city of Nizam's",
       image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80"
     },
     {
-      name: "Kyoto",
-      description: "A historic destination featuring endless natural beauty",
-      image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80"
-    },
-    {
       name: "Kerala",
-      description: "Natural cultural beauty at its peak",
+      description: "The glorious city of Nizam's",
       image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80"
     },
     {
-      name: "Hyderabad",
-      description: "The city of Nizams",
-      image: "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&q=80"
+      name: "New York",
+      description: "The glorious city of Nizam's",
+      image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80"
     },
     {
       name: "Nepal",
-      description: "Home of Mount Everest",
+      description: "The glorious city of Nizam's",
       image: "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=800&q=80"
     },
     {
       name: "New York",
-      description: "The big apple of dreams",
-      image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80"
+      description: "The glorious city of Nizam's",
+      image: "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&q=80"
     },
     {
       name: "Dubai",
-      description: "Treasured gem of thousands",
+      description: "The glorious city of Nizam's",
       image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80"
     },
     {
+      name: "New York",
+      description: "The glorious city of Nizam's",
+      image: "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=800&q=80"
+    },
+    {
       name: "London",
-      description: "The timeless city of dreams",
+      description: "The glorious city of Nizam's",
       image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80"
     }
   ]
@@ -72,18 +72,15 @@ export default function PopularDestinations() {
         // Transform API data into the same structure as fallbackDestinations
         const apiDestinations: Destination[] = data.map((item: any) => ({
           name: item.name,
-          description: item.tagline || "",
+          description: item.tagline || "The glorious city of Nizam's",
           image: item.img_url || ""
         }))
-
-        //setDestinations(apiDestinations);
 
         // Fill the rest of slots with fallback destinations if API has fewer
         const finalData = [...apiDestinations, ...fallbackDestinations].slice(0, 9)
         setDestinations(finalData)
       } catch (err: any) {
         console.error(err)
-        //setDestinations(fallbackDestinations)
         setError(err.message)
       } finally {
         setLoading(false)
@@ -106,23 +103,23 @@ export default function PopularDestinations() {
           </p>
         </div>
 
-        {/* Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="flex flex-col gap-6">
-            <Card destination={destinations[0]} size="extra-large" />
-            <Card destination={destinations[2]} size="large" />
-            <Card destination={destinations[4]} size="medium" />
-            <Card destination={destinations[6]} size="extra-large" />
+        {/* Grid Layout - Exact pattern from image */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Left Column - 4 cards */}
+          <div className="flex flex-col gap-4">
+            <Card destination={destinations[0]} height="h-[657px]" />
+            <Card destination={destinations[1]} height="h-[320px]" />
+            <Card destination={destinations[2]} height="h-[320px]" />
+            <Card destination={destinations[3]} height="h-[657px]" />
           </div>
 
-          {/* Right Column */}
-          <div className="flex flex-col gap-6">
-            <Card destination={destinations[1]} size="medium" />
-            <Card destination={destinations[3]} size="large" />
-            <Card destination={destinations[5]} size="medium" />
-            <Card destination={destinations[7]} size="extra-large" />
-            <Card destination={destinations[8]} size="medium" />
+          {/* Right Column - 5 cards */}
+          <div className="flex flex-col gap-4">
+            <Card destination={destinations[4]} height="h-[320px]" />
+            <Card destination={destinations[5]} height="h-[320px]" />
+            <Card destination={destinations[6]} height="h-[657px]" />
+            <Card destination={destinations[7]} height="h-[320px]" />
+            <Card destination={destinations[8]} height="h-[320px]" />
           </div>
         </div>
       </div>
@@ -131,15 +128,11 @@ export default function PopularDestinations() {
 }
 
 // ✨ Reusable Card Component
-function Card({ destination, size }: { destination: Destination; size: "extra-large" | "large" | "medium" }) {
+function Card({ destination, height }: { destination: Destination; height: string }) {
   if (!destination) return null
-  const heightClass = 
-    size === "extra-large" ? "h-120" : 
-    size === "large" ? "h-75" : 
-    "h-55"
 
   return (
-    <div className={`relative group cursor-pointer overflow-hidden rounded-2xl ${heightClass}`}>
+    <div className={`relative group cursor-pointer overflow-hidden rounded-[28px] ${height}`}>
       <img
         src={destination.image}
         alt={destination.name}
