@@ -93,15 +93,15 @@ export default function PopularDestinations() {
     fetchStates()
   }, [])
 
-  if (loading) return <div className="text-center py-16 text-gray-600">Loading destinations...</div>
+  if (loading) return <div className="text-center py-16 text-gray-600 font-opensans">Loading destinations...</div>
 
   return (
-    <div className="w-full bg-gray-50 py-16 px-4">
+    <div className="w-full bg-gray-50 py-2 px-4 font-opensans">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">Popular Destinations</h2>
-          <p className="text-gray-600 text-base">
+          <h2 className="text-4xl font-bold text-gray-900 mb-2 font-opensans">Popular Destinations</h2>
+          <p className="text-gray-600 text-base font-opensans">
             We have selected some best locations around the world for you.
           </p>
         </div>
@@ -146,9 +146,9 @@ function Card({ destination, size }: { destination: Destination; size: "extra-la
         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-      <div className="absolute bottom-6 left-6 text-white">
-        <h3 className="text-2xl font-bold mb-1">{destination.name}</h3>
-        <p className="text-sm text-gray-200">{destination.description}</p>
+      <div className="absolute bottom-6 left-6 text-white font-opensans">
+        <h3 className="text-2xl font-bold mb-1 font-opensans">{destination.name}</h3>
+        <p className="text-sm text-gray-200 font-opensans">{destination.description}</p>
       </div>
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { Facebook, Instagram, Twitter, Linkedin, Phone, Mail, Send } from "lucide-react"
 import { useState } from "react"
+import Logo from "../../assets/Logo.png"
 
 export default function Footer() {
   const [email, setEmail] = useState("")
@@ -13,23 +14,20 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#374646] text-white text-sm">
+    <footer className="bg-[#374646] text-white text-sm font-opensans">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           {/* Left Section - Logo & About */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center">
-                <div className="relative">
-                  <div className="w-12 h-12 border-[3px] border-[#C9A86A] transform rotate-45"></div>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#C9A86A] rounded-full"></div>
-                  <div className="absolute top-0 right-0 w-2 h-2 bg-[#2C3C3C] rounded-full"></div>
-                </div>
-                <div className="ml-3">
-                  <span className="font-bold text-xl text-[#C9A86A]">TRIP</span>
-                  <div className="h-0.5 bg-[#C9A86A] w-full mt-1"></div>
-                </div>
+              <div className="flex items-center gap-3">
+                 <img src={Logo} alt="Shinee Trip Logo" className="h-14 w-auto object-contain" />
+                 <div className="flex flex-col">
+                   <span className="text-white font-medium text-2xl tracking-wide border-b-2 border-[#C9A961] font-opensans">
+                     SHINEE <span className="text-[#C9A961]">TRIP</span>
+                   </span>
+                 </div>
               </div>
             </div>
 

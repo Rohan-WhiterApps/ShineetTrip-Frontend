@@ -1,98 +1,153 @@
-import { useState } from "react"
-import { LoginModal } from "./Login/Loginpage"
+import { useState } from "react";
+import { Menu, X, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import Logo from "../assets/Logo.png";
+import HotelIcon from "../assets/Hotel Streamline Rounded Line - Material Symbols.png";
+import FlightIcon from "../assets/Airplane In Flight Bold Streamline Phosphor Bold.png";
+import TrainIcon from "../assets/Train Streamline Sharp Line - Material Symbols.png";
+import PackageIcon from "../assets/Package Streamline Phosphor Regular.png";
+import EventIcon from "../assets/Event Streamline Carbon.png";
+import { LoginModal } from "./Login/Loginpage";
 
-export function Navbar() {
- 
-   const [isModalOpen, setIsModalOpen] = useState(false)
+export const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const scrollToSection = (id: string) => {
-    const section = document.getElementById(id)
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" })
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      setIsOpen(false);
     }
-  }
+  };
+
+  const handleNavClick = (type: string) => {
+    navigate(`/?searchWidget=open&type=${type}`);
+    scrollToSection("home");
+  };
 
   return (
     <>
-      <nav className="w-full fixed top-0 left-0 z-50 bg-white border-b border-gray-200 px-8 py-3 flex justify-between items-center shadow-sm h-[70px]">
-        {/* Logo Section */}
-        <div className="flex ml-8 items-center gap-2 cursor-pointer" onClick={() => scrollToSection("home")}>
-          <svg width="45" height="45" viewBox="0 0 48 48" className="flex-shrink-0">
-            <polygon points="24,4 40,16 24,24 8,16" fill="#C9A961" />
-            <polygon points="24,24 40,32 24,44 8,32" fill="#2C4A5E" />
-            <g transform="translate(24, 24)">
-              <line x1="-4" y1="0" x2="4" y2="0" stroke="white" strokeWidth="2" strokeLinecap="round" />
-              <polygon points="4,0 2,-2 2,2" fill="white" />
-            </g>
-          </svg>
-
-          <div className="flex flex-col leading-tight">
-            <div className="flex items-baseline gap-0">
-              <span className="font-bold text-gray-800 text-lg tracking-wide">SHINEE</span>
-              <span className="font-bold text-amber-600 text-lg tracking-wide">TRIP</span>
+      <nav className="fixed w-full bg-white backdrop-blur-md z-50 shadow-sm font-opensans">
+        <div className="w-full">
+          <div className="flex justify-between items-center h-20 px-4 sm:px-6 lg:px-8">
+            {/* Logo - Leftmost */}
+            <div 
+              className="flex-shrink-0 flex items-center cursor-pointer" 
+              onClick={() => navigate("/")}
+            >
+              <img src={Logo} alt="Shinee Trip" className="h-12 w-auto" />
+              <div className="flex flex-col">
+                <span className="text-[#2C4A5E] font-medium text-2xl tracking-wide border-b-2 border-[#C9A961]">
+                  SHINEE <span className="text-[#C9A961]">TRIP</span>
+                </span>
+              </div>
             </div>
-            <div className="h-[2px] bg-amber-600 w-24"></div>
+
+            {/* Desktop Menu - Center */}
+            <div className="hidden md:flex items-center gap-8 flex-1 justify-center">
+              <button 
+                onClick={() => handleNavClick("Hotels")} 
+                className="flex items-center gap-2 text-gray-600 font-opensans font-medium text-[18px] leading-[21px] tracking-[0px] hover:text-[#C9A961] transition-colors group"
+              >
+                <img src={HotelIcon} alt="Hotels" className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Hotels
+              </button>
+              
+              <button 
+                onClick={() => handleNavClick("Flights")} 
+                className="flex items-center gap-2 text-gray-600 font-opensans font-medium text-[18px] leading-[21px] tracking-[0px] hover:text-[#C9A961] transition-colors group"
+              >
+                <img src={FlightIcon} alt="Flights" className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Flights
+              </button>
+
+              <button 
+                onClick={() => handleNavClick("Trains")} 
+                className="flex items-center gap-2 text-gray-600 font-opensans font-medium text-[18px] leading-[21px] tracking-[0px] hover:text-[#C9A961] transition-colors group"
+              >
+                <img src={TrainIcon} alt="Trains" className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Trains
+              </button>
+
+              <button 
+                onClick={() => handleNavClick("Holiday Packages")} 
+                className="flex items-center gap-2 text-gray-600 font-opensans font-medium text-[18px] leading-[21px] tracking-[0px] hover:text-[#C9A961] transition-colors group"
+              >
+                <img src={EventIcon} alt="Holiday Packages" className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Holiday Packages
+              </button>
+
+              <button 
+                onClick={() => handleNavClick("Events")} 
+                className="flex items-center gap-2 text-gray-600 font-opensans font-medium text-[18px] leading-[21px] tracking-[0px] hover:text-[#C9A961] transition-colors group"
+              >
+                <img src={PackageIcon} alt="Events" className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Events
+              </button>
+            </div>
+
+            {/* Login Button - Rightmost */}
+            <div className="hidden md:flex items-center flex-shrink-0">
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="text-white font-medium hover:opacity-90 transition-opacity text-[17px]"
+                style={{
+                  width: '162px',
+                  height: '42px',
+                  borderRadius: '15px',
+                  padding: '12px 24px',
+                  background: 'linear-gradient(180.95deg, #AB7E29 0.87%, #EFD08D 217.04%)',
+                  boxShadow: '0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                Login/Signup
+              </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="text-[#2C4A5E] hover:text-[#C9A961] focus:outline-none"
+              >
+                {isOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <div className="flex items-center gap-8">
-          <button className="flex items-center gap-2 text-gray-700 font-medium text-sm hover:text-amber-600 transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            Hotels
-          </button>
-
-          <button className="flex items-center gap-2 text-gray-700 font-medium text-sm hover:text-amber-600 transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-              <line x1="12" y1="22.08" x2="12" y2="12"/>
-            </svg>
-            Flights
-          </button>
-
-          <button className="flex items-center gap-2 text-gray-700 font-medium text-sm hover:text-amber-600 transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="6" width="18" height="12" rx="2"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <line x1="8" y1="6" x2="8" y2="2"/>
-              <line x1="16" y1="6" x2="16" y2="2"/>
-            </svg>
-            Trains
-          </button>
-
-          <button className="flex items-center gap-2 text-gray-700 font-medium text-sm hover:text-amber-600 transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
-            </svg>
-            Holiday Packages
-          </button>
-
-          <button className="flex items-center gap-2 text-gray-700 font-medium text-sm hover:text-amber-600 transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            Events
-          </button>
-        </div>
-
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-[#C9A961] text-white text-sm font-semibold px-8 py-2.5 rounded-md shadow-md hover:bg-[#b89851] transition-all duration-300"
-        >
-          Login/Signup
-        </button>
+        {/* Mobile Menu */}
+        {isOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100 absolute w-full">
+            <div className="px-4 pt-2 pb-3 space-y-1 shadow-lg">
+              {["Hotels", "Flights", "Trains", "Holiday Packages", "Events"].map((item) => (
+                <button
+                  key={item}
+                  onClick={() => handleNavClick(item)}
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-[#2C4A5E] hover:text-[#C9A961] hover:bg-gray-50 rounded-md"
+                >
+                  {item}
+                </button>
+              ))}
+              <div className="pt-4 pb-2">
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="w-full bg-[#2C4A5E] text-white px-4 py-2 rounded-full font-medium hover:bg-[#1a2e3b] transition-colors flex items-center justify-center gap-2"
+                >
+                  <User size={18} />
+                  Login / Signup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
-
-     <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
-  )
-}
+  );
+};

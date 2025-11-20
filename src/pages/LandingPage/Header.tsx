@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
+import Logo from "../../assets/Logo.png"
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -11,10 +12,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent rounded-sm flex items-center justify-center">
-              <span className="text-header-bg font-bold text-sm">S</span>
-            </div>
-            <span className="text-white font-bold text-lg">SHINEE TRIP</span>
+             <img src={Logo} alt="Shinee Trip Logo" className="h-10 w-auto object-contain" />
           </div>
 
           {/* Desktop Menu */}
