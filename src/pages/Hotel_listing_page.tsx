@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Star,
   Check,
@@ -8,18 +9,37 @@ import {
   Calendar,
   Search,
   SlidersHorizontal,
+  Tag,
 } from "lucide-react";
 
+interface Hotel {
+  id: string;
+  name: string;
+  location: string;
+  rating: number;
+  reviews: number;
+  images: string[];
+  amenities: string[];
+  price: number;
+  originalPrice: number;
+  taxes: number;
+  description: string;
+}
+
 const HotelListingPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [sortBy, setSortBy] = useState("Most Popular");
   const [selectedImages, setSelectedImages] = useState<{ [key: number]: number }>({});
-  const [properties, setProperties] = useState<any[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Search filters state
-  const [searchLocation, setSearchLocation] = useState("Goa");
-  const [checkIn, setCheckIn] = useState("11-16 Nov");
-  const [guests, setGuests] = useState("3 guests");
+  // Get search parameters from URL
+  const location = searchParams.get("location") || "";
+  const checkIn = searchParams.get("checkIn") || "";
+  const checkOut = searchParams.get("checkOut") || "";
+  const adults = searchParams.get("adults") || "2";
+  const children = searchParams.get("children") || "0";
 
   const sortOptions = [
     "Most Popular",
@@ -30,7 +50,7 @@ const HotelListingPage: React.FC = () => {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchHotels = async () => {
       try {
         const token = localStorage.getItem("shineetrip_token");
         if (!token) {
@@ -39,7 +59,18 @@ const HotelListingPage: React.FC = () => {
           return;
         }
 
-        const propertiesRes = await fetch("http://46.62.160.188:3000/properties", {
+        // Build API URL with search parameters
+        const apiUrl = new URL("http://46.62.160.188:3000/search/hotels");
+        if (location) apiUrl.searchParams.append("location", location);
+        if (checkIn) apiUrl.searchParams.append("checkIn", checkIn);
+        if (checkOut) apiUrl.searchParams.append("checkOut", checkOut);
+        if (adults) apiUrl.searchParams.append("adults", adults);
+        if (children) apiUrl.searchParams.append("children", children);
+
+        console.log("API URL:", apiUrl.toString());
+        console.log("Search params:", { location, checkIn, checkOut, adults, children });
+
+        const response = await fetch(apiUrl.toString(), {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -47,28 +78,70 @@ const HotelListingPage: React.FC = () => {
           },
         });
 
-        if (!propertiesRes.ok) throw new Error("Failed to fetch properties");
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("API Error Response:", errorText);
+          console.error("Status:", response.status, response.statusText);
+          throw new Error(`Failed to fetch hotels: ${response.status} ${errorText}`);
+        }
 
-        const propertiesData = await propertiesRes.json();
-        console.log("Fetched properties:", propertiesData);
+        const data = await response.json();
+        console.log("Fetched hotels:", data);
 
-        const propertyList = propertiesData.data || propertiesData;
-        setProperties(propertyList);
+        // Transform API data to match our interface
+        // API returns array of objects with 'property' and 'availableRoomTypes'
+        const hotelList = (Array.isArray(data) ? data : []).map((item: any) => {
+          const hotel = item.property || item;
+          const roomTypes = item.availableRoomTypes || [];
+          
+          return {
+            id: hotel.id || hotel._id,
+            name: hotel.name || "Hotel Name",
+            location: `${hotel.city || location}, ${hotel.country || ""}`.trim(),
+            rating: parseFloat(hotel.rating) || 5,
+            reviews: hotel.reviews || Math.floor(Math.random() * 5000) + 1000,
+            images: hotel.images && hotel.images.length > 0 
+              ? hotel.images.map((img: any) => img.img_link || img)
+              : [
+                  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+                  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
+                  "https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800",
+                  "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800",
+                ],
+            amenities: hotel.selectedFeatures?.map((f: any) => f.name) || ["Free WiFi", "Pool", "Parking"],
+            price: roomTypes[0]?.price?.retail_price || 3000,
+            originalPrice: (roomTypes[0]?.price?.retail_price || 3000) * 1.3,
+            taxes: (roomTypes[0]?.price?.retail_tax_price || 0) - (roomTypes[0]?.price?.retail_price || 0),
+            description: hotel.address || hotel.short_description || "1.5Km drive to city center",
+          };
+        });
+
+        console.log("Transformed hotels:", hotelList);
+        setHotels(hotelList);
+
+        if (hotelList.length === 0) {
+          console.warn("No hotels found for the search criteria");
+        }
 
         // Initialize selected images
         const initialImages: { [key: number]: number } = {};
-        propertyList.forEach((_: any, index: number) => {
+        hotelList.forEach((_: any, index: number) => {
           initialImages[index] = 0;
         });
         setSelectedImages(initialImages);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching hotels:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchHotels();
+  }, [location, checkIn, checkOut, adults, children]);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, []);
 
   const handleImageSelect = (hotelIndex: number, imageIndex: number) => {
@@ -78,124 +151,128 @@ const HotelListingPage: React.FC = () => {
     }));
   };
 
-  const getPropertyImages = (property: any) => {
-    if (property.images && property.images.length > 0) {
-      return property.images;
-    }
-    return [
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
-      "https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800",
-      "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800",
-    ];
+  const handleHotelClick = (hotelId: string) => {
+    navigate(`/room-booking/${hotelId}`);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <p className="text-gray-600 text-lg font-medium">Loading properties...</p>
-      </div>
-    );
-  }
-
-  if (!properties.length) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <p className="text-gray-600 text-lg font-medium">No properties found.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen mt-16 bg-gray-50">
+    <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
       {/* Search Bar */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 sticky top-[116px] z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4 justify-center">
-            <div className="flex items-center gap-3 bg-white border border-gray-300 rounded-full px-6 py-3 shadow-sm">
-              <MapPin className="w-5 h-5 text-amber-500" />
-              <input
-                type="text"
-                value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-                className="outline-none text-gray-700 font-medium min-w-[100px]"
-              />
-              <div className="h-6 w-px bg-gray-300"></div>
-              <Calendar className="w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={checkIn}
-                onChange={(e) => setCheckIn(e.target.value)}
-                className="outline-none text-gray-700 font-medium min-w-[120px]"
-              />
-              <div className="h-6 w-px bg-gray-300"></div>
-              <Users className="w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={guests}
-                onChange={(e) => setGuests(e.target.value)}
-                className="outline-none text-gray-700 font-medium min-w-[100px]"
-              />
-              <button className="bg-amber-400 p-2 rounded-full hover:bg-amber-500 transition-colors">
-                <Search className="w-5 h-5 text-white" />
-              </button>
+          {/* Search Fields */}
+          <div className="flex items-center justify-center gap-0 mb-4">
+            {/* Location Field */}
+            <div className="flex-1 max-w-[250px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                CITY, AREA OR PROPERTY
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">{location || "Manali"}</span>
+              </div>
             </div>
-            <button className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors">
-              <SlidersHorizontal className="w-5 h-5" />
-              Filters
+
+            {/* Check-in Field */}
+            <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                CHECK-IN
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">
+                  {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : "Fri, 21 Nov 2025"}
+                </span>
+              </div>
+            </div>
+
+            {/* Check-out Field */}
+            <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                CHECK-OUT
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">
+                  {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : "Fri, 21 Nov 2025"}
+                </span>
+              </div>
+            </div>
+
+            {/* Room & Guest Field */}
+            <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                ROOM & GUEST
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">
+                  1 Room, {adults} Adult{parseInt(adults) > 1 ? 's' : ''}
+                </span>
+              </div>
+            </div>
+
+            {/* Search Button */}
+            <button className="bg-black text-white p-4 rounded-full hover:bg-gray-800 transition-colors ml-4">
+              <Search className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Sort Options */}
+          <div className="flex items-center gap-4 justify-center flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-900">Sort By:</span>
+              <SlidersHorizontal className="w-4 h-4 text-gray-500" />
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              {sortOptions.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setSortBy(option)}
+                  className={`px-5 py-2 rounded-full text-sm font-normal transition-all ${
+                    sortBy === option
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Sort Options */}
-        <div className="mb-6 flex items-center gap-4">
-          <span className="font-bold text-base text-gray-900">Sort By:</span>
-          <div className="flex gap-2 flex-wrap">
-            {sortOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setSortBy(option)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                  sortBy === option
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+      <div className="max-w-7xl  mx-auto px-6 py-4">
+        {/* Results Header */}
+        <div className="mb-4 mt-2">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Showing Properties in {location || "Manali"}
+          </h1>
         </div>
 
-        {/* Property Cards */}
-        <div className="space-y-6">
-          {properties.map((property: any, index: number) => {
-            const images = getPropertyImages(property);
+        {/* Hotel Cards */}
+        <div className="space-y-8">
+          {hotels.map((hotel, index) => {
             const currentImageIndex = selectedImages[index] || 0;
-            const features = property.selectedFeatures || [];
-            const roomType = property.roomTypes?.[0];
-            const retailPrice = parseFloat(roomType?.price?.retail_price || "0");
-            const retailTaxPrice = parseFloat(roomType?.price?.retail_tax_price || "0");
-            const taxAmount = retailTaxPrice > retailPrice ? retailTaxPrice - retailPrice : 0;
 
             return (
               <div
-                key={property.id || index}
-                className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                key={hotel.id}
+                onClick={() => handleHotelClick(hotel.id)}
+                className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
               >
-                <div className="flex gap-0">
+                <div className="flex flex-col md:flex-row gap-0">
                   {/* Image Section */}
-                  <div className="w-[420px] flex-shrink-0">
-                    <div className="relative h-full">
+                  <div className="w-full md:w-[550px] flex-shrink-0">
+                    <div className="relative h-[280px] md:h-[320px]">
                       <img
-                        src={images[currentImageIndex]}
-                        alt={property.name}
+                        src={hotel.images[currentImageIndex]}
+                        alt={hotel.name}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute bottom-4 left-4 flex gap-2">
-                        {images.slice(0, 4).map((img: string, imgIndex: number) => (
+                        {hotel.images.slice(0, 4).map((img, imgIndex) => (
                           <button
                             key={imgIndex}
                             onClick={() => handleImageSelect(index, imgIndex)}
@@ -224,34 +301,39 @@ const HotelListingPage: React.FC = () => {
 
                   {/* Content Section */}
                   <div className="flex-1 p-6">
-                    <div className="flex justify-between h-full">
+                    <div className="flex flex-col lg:flex-row justify-between h-full gap-6">
                       {/* Left Content */}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-5 h-5 fill-green-600 text-green-600" />
+                            <Star
+                              key={i}
+                              className={`w-5 h-5 ${
+                                i < Math.floor(hotel.rating)
+                                  ? "fill-green-600 text-green-600"
+                                  : "fill-gray-300 text-gray-300"
+                              }`}
+                            />
                           ))}
                           <span className="text-sm text-gray-600 font-medium">
-                            {property.rating || "4.8"} (
-                            {Math.floor(Math.random() * 5000) + 1000} Ratings)
+                            {hotel.rating.toFixed(1)} ({hotel.reviews.toLocaleString()} Ratings)
                           </span>
                         </div>
 
                         <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                          {property.name}
+                          {hotel.name}
                         </h2>
                         <p className="text-sm text-gray-600 mb-4">
-                          {property.city || "Location"} |{" "}
-                          {property.address || "1.5Km drive to city center"}
+                          {hotel.location} | {hotel.description}
                         </p>
 
                         <div className="flex gap-2 mb-6 flex-wrap">
-                          {features.slice(0, 3).map((feature: any, idx: number) => (
+                          {hotel.amenities.slice(0, 3).map((amenity, idx) => (
                             <span
                               key={idx}
                               className="px-4 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-full border border-gray-200"
                             >
-                              {feature.name}
+                              {amenity}
                             </span>
                           ))}
                         </div>
@@ -278,45 +360,54 @@ const HotelListingPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Right Content */}
-                      <div className="w-64 flex flex-col justify-between">
+                      {/* Right Content - Coupons & Price */}
+                      <div className="w-full lg:w-[320px] flex flex-col justify-between border-l border-gray-100 pl-6">
+                        {/* Coupons Section */}
                         <div className="mb-4">
-                          <h3 className="font-bold text-lg mb-3">Coupons</h3>
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-red-600 font-semibold text-sm">
-                                🏷️ Discount
-                              </span>
-                              <span className="text-green-600 font-bold">₹ 565 OFF</span>
+                          <h3 className="font-semibold text-gray-900 mb-3">Coupons</h3>
+                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                            <div className="flex justify-between items-center mb-2">
+                              <div className="flex items-center gap-1 bg-gray-200 px-2 py-1 rounded text-xs font-bold text-gray-700">
+                                <Tag className="w-3 h-3 fill-red-500 text-red-500" />
+                                Discount
+                              </div>
+                              <span className="text-green-600 font-bold text-sm">₹ 565 OFF</span>
                             </div>
-                            <p className="text-xs text-gray-600">
-                              Pay using Canara Bank Credit Cards EMI to avail the offer with
-                              No Cost EMI
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                              Pay using Canara Bank Credit Cards EMI to avail the offer with No Cost EMI
                             </p>
                           </div>
                         </div>
 
-                        {/* ✅ Dynamic Price Section */}
-                        <div>
-                          <p className="text-xs text-gray-500 text-right mb-1">
-                            + ₹ {Math.round(taxAmount).toLocaleString()} taxes & fees per night
-                          </p>
-                          <div className="flex items-end justify-end gap-3">
-                            <span className="text-gray-400 line-through text-lg">
-                              ₹ {retailPrice ? Math.floor(retailPrice * 1.3).toLocaleString() : "00"}
+                        {/* Price Section */}
+                        <div className="flex flex-col items-end mt-auto">
+                          <span className="text-xs text-gray-500 mb-1">
+                            + ₹ {Math.round(hotel.taxes)} taxes & fees per night
+                          </span>
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-lg text-gray-400 line-through">
+                              ₹ {hotel.originalPrice.toLocaleString()}
                             </span>
-                            <span className="text-green-600 font-bold text-3xl">
-                              ₹ {retailPrice ? retailPrice.toLocaleString() : "00"}
-                            </span>
+                            <button className="bg-[#22C55E] hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold text-2xl shadow-sm transition-colors">
+                              ₹ {hotel.price.toLocaleString()}
+                            </button>
                           </div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Load More Button */}
+        <div className="flex justify-center mt-8">
+          <button className="bg-gray-900 text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors">
+            Load More
+          </button>
         </div>
       </div>
     </div>

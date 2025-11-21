@@ -8,7 +8,7 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <header className="fixed top-0 w-full bg-header-bg/95 backdrop-blur-sm z-50 border-b border-border">
+    <header className="fixed top-0 w-full bg-header-bg/95 backdrop-blur-sm z-50 border-b border-border font-opensans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-2">

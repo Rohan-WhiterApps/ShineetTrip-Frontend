@@ -214,7 +214,11 @@ export function PhoneLoginForm({ onSuccess }: { onSuccess?: () => void }) {
           <Button
             onClick={handleSendOTP}
             disabled={loading}
-            className="w-full h-12 bg-[#D4A76A] hover:bg-[#C4976A] text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+            className="w-full h-12 text-white font-semibold rounded-lg transition-all disabled:opacity-50 hover:opacity-90"
+            style={{
+              background: 'linear-gradient(180.95deg, #AB7E29 0.87%, #EFD08D 217.04%)',
+              boxShadow: '0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)'
+            }}
           >
             {loading ? (
               <>
@@ -305,7 +309,11 @@ export function PhoneLoginForm({ onSuccess }: { onSuccess?: () => void }) {
             <Button
               onClick={() => handleVerifyOTP()}
               disabled={loading || !consentChecked}
-              className="w-full h-12 bg-[#D4A76A] hover:bg-[#C4976A] text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full h-12 text-white font-semibold rounded-lg transition-all disabled:opacity-50 hover:opacity-90"
+              style={{
+                background: 'linear-gradient(180.95deg, #AB7E29 0.87%, #EFD08D 217.04%)',
+                boxShadow: '0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)'
+              }}
             >
               {loading ? (
                 <>

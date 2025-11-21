@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Menu, Phone, Mail, MapPin } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, MapPin, Calendar, Users } from 'lucide-react';
 
 const Tourspackages = () => {
   const [selectedSort, setSelectedSort] = useState('Most Popular');
@@ -7,11 +7,9 @@ const Tourspackages = () => {
   const sortOptions = [
     'Most Popular',
     'Price- Low to high',
-    'Price- Low to high',
     'Price- High to low',
     'Best Rated',
     'Lowest Price & Best Rated',
-    'Lowest'
   ];
 
   const packages = Array(8).fill({
@@ -34,9 +32,69 @@ const Tourspackages = () => {
   });
 
   return (
-    <div className="min-h-screen mt-16 bg-gray-50">
-      {/* Header */}
-      
+    <div className="min-h-screen bg-gray-50 pt-[116px] font-opensans">
+      {/* Search Bar */}
+      <div className="bg-white border-b border-gray-200 sticky top-[116px] z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          {/* Search Fields */}
+          <div className="flex items-center justify-center gap-0">
+            {/* Location Field */}
+            <div className="flex-1 max-w-[250px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                CITY, AREA OR PROPERTY
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">Goa</span>
+              </div>
+            </div>
+
+            {/* Check-in Field */}
+            <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                CHECK-IN
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">
+                  Fri, 21 Nov 2025
+                </span>
+              </div>
+            </div>
+
+            {/* Check-out Field */}
+            <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                CHECK-OUT
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">
+                  Fri, 21 Nov 2025
+                </span>
+              </div>
+            </div>
+
+            {/* Room & Guest Field */}
+            <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2">
+              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                ROOM & GUEST
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#D2A256]" />
+                <span className="text-base font-normal text-gray-900">
+                  1 Room, 2 Adult
+                </span>
+              </div>
+            </div>
+
+            {/* Search Button */}
+            <button className="bg-black text-white p-4 rounded-full hover:bg-gray-800 transition-colors ml-4">
+              <Search className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
@@ -45,8 +103,6 @@ const Tourspackages = () => {
           <h1 className="text-4xl font-bold text-gray-900">Goa Packages</h1>
           <p className="text-gray-600 text-lg">Experience Beach & Sunsets</p>
         </div>
-
-
 
         {/* Horizontal Scroll Buttons */}
         <div className="relative mb-4">
@@ -97,7 +153,7 @@ const Tourspackages = () => {
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-4">
                   <div>
-                    {pkg.features.map((feature, i) => (
+                    {pkg.features.map((feature: string, i: number) => (
                       <div key={i} className="flex items-start gap-2 mb-1">
                         <span className="text-gray-400 text-xs mt-1">•</span>
                         <span className={`text-sm ${feature.includes('Honeymoon') || feature.includes('North') ? 'text-green-600' : 'text-gray-700'}`}>
@@ -107,7 +163,7 @@ const Tourspackages = () => {
                     ))}
                   </div>
                   <div>
-                    {pkg.additionalFeatures.map((feature, i) => (
+                    {pkg.additionalFeatures.map((feature: string, i: number) => (
                       <div key={i} className="flex items-start gap-2 mb-1">
                         <span className="text-gray-400 text-xs mt-1">•</span>
                         <span className="text-sm text-gray-700">{feature}</span>

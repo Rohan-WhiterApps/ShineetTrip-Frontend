@@ -90,8 +90,15 @@ export const verifyOTP = async (confirmationResult: any, otp: string): Promise<U
 
 // ✅ GOOGLE LOGIN
 export const signInWithGoogle = async (): Promise<User | null> => {
-  const result = await signInWithPopup(auth, googleProvider)
-  return result.user
+  try {
+    const result = await signInWithPopup(auth, googleProvider)
+    return result.user
+  } catch (error: any) {
+    console.error("Google sign-in error:", error)
+    console.error("Error code:", error.code)
+    console.error("Error message:", error.message)
+    throw error
+  }
 }
 
 // ✅ FACEBOOK LOGIN

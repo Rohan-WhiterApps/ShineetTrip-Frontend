@@ -5,6 +5,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Loader2, X } from "lucide-react"
 import { signInWithFacebook, signInWithGoogle } from "@/Firebase/firebasevalidation"
 import { PhoneLoginForm } from "./phone.login.form"
+import Logo from "../../assets/Logo.png"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -44,52 +45,52 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [socialLoading, setSocialLoading] = useState<string | null>(null)
 
   const handleGoogleLogin = async () => {
-  setSocialLoading("google");
-  try {
-    const user = await signInWithGoogle();
-    if (!user) return;
+    setSocialLoading("google");
+    try {
+      const user = await signInWithGoogle();
+      if (!user) return;
 
-    console.log("user details from google", user.uid);
+      console.log("user details from google", user.uid);
 
-    // ✅ Get a fresh ID token from Firebase
-    const token = await user.getIdToken();
+      // ✅ Get a fresh ID token from Firebase
+      const token = await user.getIdToken();
 
-    // ✅ Save the token locally for reuse in future API calls
-    localStorage.setItem("shineetrip_token", token);
-    localStorage.setItem("shineetrip_uid", user.uid);
+      // ✅ Save the token locally for reuse in future API calls
+      localStorage.setItem("shineetrip_token", token);
+      localStorage.setItem("shineetrip_uid", user.uid);
 
-    console.log("Access token saved to localStorage:", token);
+      console.log("Access token saved to localStorage:", token);
 
-  const res = await fetch(
-  `http://46.62.160.188:3000/firebase-auth/set-roles/${user.uid}`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      roles: ["USER"],
-    }),
-  }
-);
+      const res = await fetch(
+        `http://46.62.160.188:3000/firebase-auth/set-roles/${user.uid}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            roles: ["USER"],
+          }),
+        }
+      );
 
-  console.log(res);
+      console.log(res);
 
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Failed to set roles: ${err}`);
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Failed to set roles: ${err}`);
+      }
+
+      console.log("✅ Roles assigned successfully");
+      onClose();
+    } catch (error: any) {
+      console.error("Google sign-in or role assignment failed:", error);
+      alert("Login failed. Please try again.");
+    } finally {
+      setSocialLoading(null);
     }
-
-    console.log("✅ Roles assigned successfully");
-    onClose();
-  } catch (error: any) {
-    console.error("Google sign-in or role assignment failed:", error);
-    alert("Login failed. Please try again.");
-  } finally {
-    setSocialLoading(null);
-  }
-};
+  };
 
 
   const handleFacebookLogin = async () => {
@@ -118,10 +119,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 border-0 max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h1 className="text-xl font-semibold text-gray-900">Log in or sign up</h1>
-          <button onClick={onClose} className="text-gray-600 hover:text-gray-900">
+      <DialogContent showCloseButton={false} className="p-0 border-0 max-w-md max-h-[90vh] overflow-y-auto font-opensans">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <img src={Logo} alt="Shinee Trip" className="h-8 w-auto" />
+            <h1 className="text-lg font-bold text-gray-900">Log in or sign up</h1>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -145,7 +150,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <button
               onClick={handleGoogleLogin}
               disabled={!!socialLoading}
-              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
+              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-start px-4 gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
             >
               {socialLoading === "google" ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -158,7 +163,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <button
               onClick={handleAppleLogin}
               disabled={!!socialLoading}
-              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
+              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-start px-4 gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
             >
               {socialLoading === "apple" ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -171,7 +176,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <button
               onClick={handleGoogleLogin}
               disabled={!!socialLoading}
-              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
+              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-start px-4 gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
             >
               <EmailLogo />
               Continue with email
@@ -180,7 +185,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <button
               onClick={handleFacebookLogin}
               disabled={!!socialLoading}
-              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
+              className="w-full h-14 border-2 border-gray-900 rounded-lg flex items-center justify-start px-4 gap-3 hover:bg-gray-50 transition-colors font-semibold text-gray-900 disabled:opacity-50"
             >
               {socialLoading === "facebook" ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react"
 
 interface Destination {
@@ -7,6 +8,7 @@ interface Destination {
 }
 
 export default function PopularDestinations() {
+  const navigate = useNavigate();
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -90,6 +92,27 @@ export default function PopularDestinations() {
     fetchStates()
   }, [])
 
+  const handleDestinationClick = (destinationName: string) => {
+    console.log("Destination clicked:", destinationName);
+    
+    // Check if user is logged in
+    const token = localStorage.getItem("shineetrip_token");
+    if (!token) {
+      console.warn("No token found - user needs to log in");
+      alert("Please log in to search for hotels");
+      return;
+    }
+
+    // Navigate to hotel listing page with only the location parameter
+    // Don't send dates to avoid "Cannot search availability in the past" error
+    const searchQuery = new URLSearchParams({
+      location: destinationName,
+    }).toString();
+
+    console.log("Navigating to:", `/hotellists?${searchQuery}`);
+    navigate(`/hotellists?${searchQuery}`);
+  };
+
   if (loading) return <div className="text-center py-16 text-gray-600 font-opensans">Loading destinations...</div>
 
   return (
@@ -107,19 +130,19 @@ export default function PopularDestinations() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Left Column - 4 cards */}
           <div className="flex flex-col gap-4">
-            <Card destination={destinations[0]} height="h-[657px]" />
-            <Card destination={destinations[1]} height="h-[320px]" />
-            <Card destination={destinations[2]} height="h-[320px]" />
-            <Card destination={destinations[3]} height="h-[657px]" />
+            <Card destination={destinations[0]} height="h-[657px]" onClick={handleDestinationClick} />
+            <Card destination={destinations[1]} height="h-[320px]" onClick={handleDestinationClick} />
+            <Card destination={destinations[2]} height="h-[320px]" onClick={handleDestinationClick} />
+            <Card destination={destinations[3]} height="h-[657px]" onClick={handleDestinationClick} />
           </div>
 
           {/* Right Column - 5 cards */}
           <div className="flex flex-col gap-4">
-            <Card destination={destinations[4]} height="h-[320px]" />
-            <Card destination={destinations[5]} height="h-[320px]" />
-            <Card destination={destinations[6]} height="h-[657px]" />
-            <Card destination={destinations[7]} height="h-[320px]" />
-            <Card destination={destinations[8]} height="h-[320px]" />
+            <Card destination={destinations[4]} height="h-[320px]" onClick={handleDestinationClick} />
+            <Card destination={destinations[5]} height="h-[320px]" onClick={handleDestinationClick} />
+            <Card destination={destinations[6]} height="h-[657px]" onClick={handleDestinationClick} />
+            <Card destination={destinations[7]} height="h-[320px]" onClick={handleDestinationClick} />
+            <Card destination={destinations[8]} height="h-[320px]" onClick={handleDestinationClick} />
           </div>
         </div>
       </div>
@@ -128,11 +151,22 @@ export default function PopularDestinations() {
 }
 
 // ✨ Reusable Card Component
-function Card({ destination, height }: { destination: Destination; height: string }) {
+function Card({ 
+  destination, 
+  height, 
+  onClick 
+}: { 
+  destination: Destination; 
+  height: string;
+  onClick: (name: string) => void;
+}) {
   if (!destination) return null
 
   return (
-    <div className={`relative group cursor-pointer overflow-hidden rounded-[28px] ${height}`}>
+    <div 
+      className={`relative group cursor-pointer overflow-hidden rounded-[28px] ${height}`}
+      onClick={() => onClick(destination.name)}
+    >
       <img
         src={destination.image}
         alt={destination.name}

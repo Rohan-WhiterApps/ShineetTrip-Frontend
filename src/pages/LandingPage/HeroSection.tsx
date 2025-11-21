@@ -1,12 +1,14 @@
 
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Calendar, Users, Search, ChevronLeft, ChevronRight, ChevronDown, Minus, Plus, X } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { MapPin, Calendar, Users, Search, ChevronLeft, ChevronRight, ChevronDown, Plus, Minus, X, Bed } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { LoginModal } from "../Login/Loginpage";
 
 export default function HeroSection() {
   const [activeTab, setActiveTab] = useState("Beach Vacations");
   const [slideIndex, setSlideIndex] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   // Search Widget State
   const [isSearchVisible, setIsSearchVisible] = useState(false);
@@ -16,7 +18,10 @@ export default function HeroSection() {
   const [checkOut, setCheckOut] = useState("");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
-  const [rooms, setRooms] = useState(1);
+  const [rooms, setRooms] = useState(0);
+  
+  // Login Popup State
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   // API & Autocomplete State
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
@@ -123,18 +128,31 @@ export default function HeroSection() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [wrapperRef]);
 
-  const handleSearch = () => {
-    const searchData = {
-      type: searchTab,
+  const handleSearch = async () => {
+    // Check if user is logged in
+    const token = localStorage.getItem("shineetrip_token");
+    
+    if (!token) {
+      setShowLoginPopup(true);
+      return;
+    }
+
+    // Validate required fields
+    // if (!location || !checkIn || !checkOut) {
+    //   alert("Please fill in all required fields (Location, Check-in, and Check-out dates)");
+    //   return;
+    // }
+
+    // Navigate to hotel listing page with search parameters
+    const searchQuery = new URLSearchParams({
       location,
       checkIn,
       checkOut,
-      adults,
-      children,
-      rooms
-    };
-    console.log("Search Data:", searchData);
-    alert(`Search initiated for ${searchTab} in ${location || "any location"}!`);
+      adults: adults.toString(),
+      children: children.toString(),
+    }).toString();
+
+    navigate(`/hotellists?${searchQuery}`);
   };
 
   const closeSearchWidget = () => {
@@ -143,7 +161,10 @@ export default function HeroSection() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 font-sans">
+    <div className="w-full min-h-screen bg-gray-50 font-opensans">
+      {/* Login Modal */}
+      <LoginModal isOpen={showLoginPopup} onClose={() => setShowLoginPopup(false)} />
+
       {/* HERO SECTION */}
       <div className="relative w-full h-[100vh] overflow-hidden">
         {/* Background Image */}
@@ -158,23 +179,28 @@ export default function HeroSection() {
           
           {/* Search Widget Container */}
           {isSearchVisible && (
-            <div className="w-full max-w-5xl mx-auto bg-black/60 backdrop-blur-md rounded-3xl p-8 text-white relative animate-in fade-in zoom-in duration-300 mt-20">
+            <div 
+              className="w-full max-w-5xl mx-auto backdrop-blur-xl rounded-[28px] p-4 sm:p-6 md:p-8 text-white relative animate-in fade-in zoom-in duration-300 mt-20 mb-68"
+              style={{
+                background: 'rgba(0, 0, 0, 0.6)'
+              }}
+            >
               
               {/* Close Button */}
               <button 
                 onClick={closeSearchWidget}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
               >
                 <X size={24} />
               </button>
               
               {/* Header */}
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start mb-6 pr-8">
                 <div>
-                  <h2 className="text-3xl font-bold mb-2 tracking-wide">PLAN YOUR JOURNEY</h2>
-                  <p className="text-gray-300 text-sm">Select your travel dates and destination to find the perfect getaway</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-wide">PLAN YOUR JOURNEY</h2>
+                  <p className="text-gray-300 text-xs sm:text-sm">Select your travel dates and destination to find the perfect getaway</p>
                 </div>
-                <button className="flex items-center gap-1 text-[#C9A961] text-sm font-medium hover:text-white transition-colors">
+                <button className="hidden sm:flex items-center gap-1 text-[#C9A961] text-sm font-medium hover:text-white transition-colors mt-2 sm:mt-0">
                   Advance Search <ChevronDown size={16} />
                 </button>
               </div>
@@ -183,8 +209,8 @@ export default function HeroSection() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {/* Location */}
                 <div className="space-y-2 relative" ref={wrapperRef}>
-                  <div className="flex items-center gap-2 text-[#C9A961] text-xs font-bold tracking-wider uppercase">
-                    <MapPin size={14} />
+                  <div className="flex items-center gap-2 text-white text-xs font-bold tracking-wider uppercase">
+                    <MapPin size={14} className="text-[#D2A256]" />
                     NAME OF LOCATION
                   </div>
                   <div className="relative">
@@ -220,8 +246,8 @@ export default function HeroSection() {
 
                 {/* Check In */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[#C9A961] text-xs font-bold tracking-wider uppercase">
-                    <Calendar size={14} />
+                  <div className="flex items-center gap-2 text-white text-xs font-bold tracking-wider uppercase">
+                    <Calendar size={14} className="text-[#D2A256]" />
                     CHECK-IN DATE *
                   </div>
                   <input 
@@ -234,8 +260,8 @@ export default function HeroSection() {
 
                 {/* Check Out */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[#C9A961] text-xs font-bold tracking-wider uppercase">
-                    <Calendar size={14} />
+                  <div className="flex items-center gap-2 text-white text-xs font-bold tracking-wider uppercase">
+                    <Calendar size={14} className="text-[#D2A256]" />
                     CHECK-OUT DATE *
                   </div>
                   <input 
@@ -249,42 +275,84 @@ export default function HeroSection() {
 
               {/* Counters Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {/* Adults */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[#C9A961] text-xs font-bold tracking-wider uppercase">
-                    <Users size={14} />
+                  <div className="flex items-center gap-2 text-white text-xs font-bold tracking-wider uppercase">
+                    <Users size={14} className="text-[#D2A256]" />
                     ADULTS *
                   </div>
-                  <div className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 flex justify-between items-center">
-                    <button onClick={() => setAdults(Math.max(1, adults - 1))} className="text-[#C9A961] hover:text-white"><Minus size={16} /></button>
-                    <span className="font-medium">{adults}</span>
-                    <button onClick={() => setAdults(adults + 1)} className="text-[#C9A961] hover:text-white"><Plus size={16} /></button>
+                  <div className="flex justify-between items-center gap-4">
+                    <button 
+                      onClick={() => setAdults(Math.max(1, adults - 1))} 
+                      className="w-14 h-14 bg-[#5A5550] hover:bg-[#6A6560] rounded-2xl flex items-center justify-center text-[#C9A961] transition-all"
+                    >
+                      <Minus size={24} strokeWidth={3} />
+                    </button>
+                    <div 
+                      className="flex-1 h-14 bg-white/10 rounded-lg flex items-center justify-center font-medium text-lg text-white"
+                      style={{ border: '1.95px solid rgba(210, 162, 86, 0.3)' }}
+                    >
+                      {adults}
+                    </div>
+                    <button 
+                      onClick={() => setAdults(adults + 1)} 
+                      className="w-14 h-14 bg-[#5A5550] hover:bg-[#6A6560] rounded-2xl flex items-center justify-center text-[#C9A961] transition-all"
+                    >
+                      <Plus size={24} strokeWidth={3} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Children */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[#C9A961] text-xs font-bold tracking-wider uppercase">
-                    <Users size={14} />
+                  <div className="flex items-center gap-2 text-white text-xs font-bold tracking-wider uppercase">
+                    <Users size={14} className="text-[#D2A256]" />
                     CHILDREN
                   </div>
-                  <div className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 flex justify-between items-center">
-                    <button onClick={() => setChildren(Math.max(0, children - 1))} className="text-[#C9A961] hover:text-white"><Minus size={16} /></button>
-                    <span className="font-medium">{children}</span>
-                    <button onClick={() => setChildren(children + 1)} className="text-[#C9A961] hover:text-white"><Plus size={16} /></button>
+                  <div className="flex justify-between items-center gap-4">
+                    <button 
+                      onClick={() => setChildren(Math.max(0, children - 1))} 
+                      className="w-14 h-14 bg-[#5A5550] hover:bg-[#6A6560] rounded-2xl flex items-center justify-center text-[#C9A961] transition-all"
+                    >
+                      <Minus size={24} strokeWidth={3} />
+                    </button>
+                    <div 
+                      className="flex-1 h-14 bg-white/10 rounded-lg flex items-center justify-center font-medium text-lg text-white"
+                      style={{ border: '1.95px solid rgba(210, 162, 86, 0.3)' }}
+                    >
+                      {children}
+                    </div>
+                    <button 
+                      onClick={() => setChildren(children + 1)} 
+                      className="w-14 h-14 bg-[#5A5550] hover:bg-[#6A6560] rounded-2xl flex items-center justify-center text-[#C9A961] transition-all"
+                    >
+                      <Plus size={24} strokeWidth={3} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Rooms */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[#C9A961] text-xs font-bold tracking-wider uppercase">
-                    <Users size={14} />
+                  <div className="flex items-center gap-2 text-white text-xs font-bold tracking-wider uppercase">
+                    <Bed size={14} className="text-[#D2A256]" />
                     ROOMS
                   </div>
-                  <div className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 flex justify-between items-center">
-                    <button onClick={() => setRooms(Math.max(1, rooms - 1))} className="text-[#C9A961] hover:text-white"><Minus size={16} /></button>
-                    <span className="font-medium">{rooms}</span>
-                    <button onClick={() => setRooms(rooms + 1)} className="text-[#C9A961] hover:text-white"><Plus size={16} /></button>
+                  <div className="flex justify-between items-center gap-4">
+                    <button 
+                      onClick={() => setRooms(Math.max(0, rooms - 1))} 
+                      className="w-14 h-14 bg-[#5A5550] hover:bg-[#6A6560] rounded-2xl flex items-center justify-center text-[#C9A961] transition-all"
+                    >
+                      <Minus size={24} strokeWidth={3} />
+                    </button>
+                    <div 
+                      className="flex-1 h-14 bg-white/10 rounded-lg flex items-center justify-center font-medium text-lg text-white"
+                      style={{ border: '1.95px solid rgba(210, 162, 86, 0.3)' }}
+                    >
+                      {rooms}
+                    </div>
+                    <button 
+                      onClick={() => setRooms(rooms + 1)} 
+                      className="w-14 h-14 bg-[#5A5550] hover:bg-[#6A6560] rounded-2xl flex items-center justify-center text-[#C9A961] transition-all"
+                    >
+                      <Plus size={24} strokeWidth={3} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -293,7 +361,13 @@ export default function HeroSection() {
               <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
                 <button 
                   onClick={handleSearch}
-                  className="bg-[#C9A961] hover:bg-[#b89851] text-white rounded-lg px-10 py-3 flex items-center gap-2 font-bold shadow-lg transition-all transform hover:scale-105"
+                  className="text-white font-bold transition-all transform hover:scale-105 flex items-center gap-2"
+                  style={{
+                    borderRadius: '15px',
+                    padding: '12px 40px',
+                    background: 'linear-gradient(180.95deg, #AB7E29 0.87%, #EFD08D 217.04%)',
+                    boxShadow: '0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
+                  }}
                 >
                   <Search size={20} />
                   Search
@@ -307,22 +381,22 @@ export default function HeroSection() {
       {/* COMBINED STATS + CATEGORIES SECTION - Single White Card */}
       <div className="pb-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-52 relative z-20">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-40 relative z-20">
           
             {/* STATS BAR - Overlapping Top Edge */}
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4">
-              <div className="bg-white rounded-full shadow-xl py-4 px-10 flex justify-between items-center border border-gray-100">
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4">
+              <div className="bg-white rounded-full shadow-xl py-3 sm:py-4 px-4 sm:px-10 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-0 border border-gray-100">
                  {[
                    ["50+", "DESTINATIONS"],
                    ["10K+", "HAPPY TRAVELERS"],
                    ["15+", "YEARS EXPERIENCE"],
                    ["100%", "SATISFACTION"],
                  ].map(([num, label], i) => (
-                   <div key={i} className={`flex flex-col items-center px-6 ${i !== 3 ? 'border-r border-gray-200' : ''} w-full`}>
-                     <div className="text-2xl font-bold text-[#D2A256] mb-1">
+                   <div key={i} className={`flex flex-col items-center px-2 sm:px-6 ${i === 1 || i === 3 ? '' : 'sm:border-r'} ${i < 2 ? '' : 'sm:border-r'} border-gray-200`}>
+                     <div className="text-lg sm:text-2xl font-bold text-[#D2A256] mb-1">
                        {num}
                      </div>
-                     <div className="text-[10px]  text-gray-500 font-semibold font-opensans tracking-wider">
+                     <div className="text-[8px] sm:text-[10px] text-gray-500 font-semibold font-opensans tracking-wider text-center">
                        {label}
                      </div>
                    </div>

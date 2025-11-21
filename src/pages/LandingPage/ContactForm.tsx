@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { Phone, Mail, MapPin, Send } from "lucide-react"
+import toast, { Toaster } from 'react-hot-toast'
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -19,42 +20,94 @@ export default function ContactForm() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Form submitted:", formData)
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      destination: "",
-      message: "",
-    })
+    
+    try {
+      // Create FormData for multipart/form-data request
+      const formDataToSend = new FormData();
+      
+      // Combine first and last name for the 'name' field
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      formDataToSend.append('name', fullName);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('title', formData.destination || 'General Inquiry');
+      formDataToSend.append('message', formData.message);
+      formDataToSend.append('status', 'pending');
+      
+      console.log("Sending contact form data:", {
+        name: fullName,
+        email: formData.email,
+        phone: formData.phone,
+        title: formData.destination || 'General Inquiry',
+        message: formData.message,
+        status: 'pending'
+      });
+
+      const response = await fetch('http://46.62.160.188:3000/contact-us', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      const result = await response.json();
+      console.log("Contact form API response:", result);
+
+      if (response.ok) {
+        toast.success("Thank you! Your message has been sent successfully. Our team will contact you within 2 hours.", {
+          duration: 5000,
+          position: 'top-center',
+        });
+        // Reset form
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          destination: "",
+          message: "",
+        });
+      } else {
+        console.error("API Error:", result);
+        toast.error("Sorry, there was an error sending your message. Please try again or contact us directly.", {
+          duration: 5000,
+          position: 'top-center',
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      toast.error("Sorry, there was an error sending your message. Please try again or contact us directly.", {
+        duration: 5000,
+        position: 'top-center',
+      });
+    }
   }
 
   return (
-    <section className="py-20 bg-[#F5F5F0] font-opensans">
+    <>
+      <Toaster />
+      <section className="py-8 bg-[#F5F5F0] font-opensans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column */}
           <div>
-            <div className="mb-8">
+            <div className="mb-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="h-px w-12 bg-[#C9A86A]"></div>
                 <span className="text-[#C9A86A] text-sm tracking-widest uppercase">Get in Touch</span>
               </div>
-              <h2 className="text-5xl md:text-6xl font-bold mb-2 text-[#2C3C3C]">Begin Your</h2>
-              <p className="text-5xl md:text-6xl text-[#C9A86A] font-light italic">Himalayan Journey</p>
+              <h2 className="text-4xl md:text-5xl font-bold mb-2 text-[#2C3C3C]">Begin Your</h2>
+              <p className="text-4xl md:text-5xl text-[#C9A86A] font-light italic">Himalayan Journey</p>
             </div>
             
-            <p className="text-gray-600 text-lg mb-12 leading-relaxed">
+            <p className="text-gray-600 text-sm mb-4 leading-relaxed">
               Let our travel curators design your perfect escape. Whether it's a romantic getaway, family adventure, or spiritual journey, we craft experiences that resonate with your soul.
             </p>
 
             {/* Contact Info Boxes */}
-            <div className="space-y-6">
+            <div className="space-y-3">
               {/* Call Us */}
-              <div className="bg-[#FBF8F3] p-6 rounded-sm border-l-4 border-[#C9A86A]">
+              <div className="bg-[#FBF8F3] p-4 rounded-sm border-l-4 border-[#C9A86A]">
                 <div className="flex items-start gap-4">
                   <div className="bg-[#C9A86A] p-3 rounded-full">
                     <Phone className="text-white" size={24} />
@@ -68,7 +121,7 @@ export default function ContactForm() {
               </div>
 
               {/* Email Us */}
-              <div className="bg-[#FBF8F3] p-6 rounded-sm border-l-4 border-[#C9A86A]">
+              <div className="bg-[#FBF8F3] p-4 rounded-sm border-l-4 border-[#C9A86A]">
                 <div className="flex items-start gap-4">
                   <div className="bg-[#C9A86A] p-3 rounded-full">
                     <Mail className="text-white" size={24} />
@@ -82,7 +135,7 @@ export default function ContactForm() {
               </div>
 
               {/* Our Offices */}
-              <div className="bg-[#FBF8F3] p-6 rounded-sm border-l-4 border-[#C9A86A]">
+              <div className="bg-[#FBF8F3] p-4 rounded-sm border-l-4 border-[#C9A86A]">
                 <div className="flex items-start gap-4">
                   <div className="bg-[#C9A86A] p-3 rounded-full">
                     <MapPin className="text-white" size={24} />
@@ -103,8 +156,8 @@ export default function ContactForm() {
             <div className="absolute -top-4 -right-4 w-20 h-20 border-t-4 border-r-4 border-[#C9A86A]"></div>
             <div className="absolute -bottom-4 -left-4 w-20 h-20 border-b-4 border-l-4 border-[#C9A86A]"></div>
             
-            <div className="bg-white p-8 shadow-lg relative">
-              <div className="space-y-6">
+            <div className="bg-white p-5 shadow-lg relative">
+              <div className="space-y-3">
                 {/* First Name & Last Name */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -194,7 +247,7 @@ export default function ContactForm() {
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    rows={5}
+                    rows={3}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#C9A86A] focus:bg-white transition resize-none"
                     required
                   />
@@ -203,7 +256,11 @@ export default function ContactForm() {
                 {/* Submit Button */}
                 <button
                   onClick={handleSubmit}
-                  className="w-full bg-[#E1BF79] hover:bg-[#B8975A] text-white py-4 text-lg font-medium transition flex items-center justify-center gap-2 shadow-md"
+                  style={{
+                    background: 'linear-gradient(90deg, #AB7E29 -21.29%, #EFD08D 87.59%)',
+                    boxShadow: '0px 2.52px 7.57px 2.52px #00000026, 0px 1.26px 2.52px 0px #0000004D'
+                  }}
+                  className="w-full text-white py-3 text-base font-medium transition flex items-center justify-center gap-2 hover:opacity-90"
                 >
                   Send Enquiry
                   <Send size={20} />
@@ -218,5 +275,6 @@ export default function ContactForm() {
         </div>
       </div>
     </section>
+    </>
   )
 }
