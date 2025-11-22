@@ -9,7 +9,6 @@ import {
   Calendar,
   Search,
   SlidersHorizontal,
-  Tag,
 } from "lucide-react";
 
 interface Hotel {
@@ -89,32 +88,27 @@ const HotelListingPage: React.FC = () => {
         console.log("Fetched hotels:", data);
 
         // Transform API data to match our interface
-        // API returns array of objects with 'property' and 'availableRoomTypes'
         const hotelList = (Array.isArray(data) ? data : []).map((item: any) => {
-          const hotel = item.property || item;
-          const roomTypes = item.availableRoomTypes || [];
+          const hotel = item.property;
+          const roomDetails = item.roomDetails;
           
+          // Skip if critical data is missing
+          if (!hotel) return null;
+
           return {
-            id: hotel.id || hotel._id,
-            name: hotel.name || "Hotel Name",
-            location: `${hotel.city || location}, ${hotel.country || ""}`.trim(),
-            rating: parseFloat(hotel.rating) || 5,
-            reviews: hotel.reviews || Math.floor(Math.random() * 5000) + 1000,
-            images: hotel.images && hotel.images.length > 0 
-              ? hotel.images.map((img: any) => img.img_link || img)
-              : [
-                  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-                  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
-                  "https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800",
-                  "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800",
-                ],
-            amenities: hotel.selectedFeatures?.map((f: any) => f.name) || ["Free WiFi", "Pool", "Parking"],
-            price: roomTypes[0]?.price?.retail_price || 3000,
-            originalPrice: (roomTypes[0]?.price?.retail_price || 3000) * 1.3,
-            taxes: (roomTypes[0]?.price?.retail_tax_price || 0) - (roomTypes[0]?.price?.retail_price || 0),
-            description: hotel.address || hotel.short_description || "1.5Km drive to city center",
+            id: String(hotel.id),
+            name: hotel.name || "",
+            location: `${hotel.city || ""}, ${hotel.country || ""}`.trim(),
+            rating: parseFloat(hotel.rating) || 0,
+            reviews: 0, // API doesn't provide review count yet
+            images: hotel.images?.map((img: any) => img.img_link) || [],
+            amenities: hotel.selectedFeatures?.map((f: any) => f.name) || [],
+            price: roomDetails?.retailPrice || 0,
+            originalPrice: roomDetails?.totalPricePerNight || 0, // Using total price as "original" or reference if needed, or just retail
+            taxes: roomDetails?.taxAmount || 0,
+            description: hotel.short_description || hotel.description || "",
           };
-        });
+        }).filter((item): item is Hotel => item !== null);
 
         console.log("Transformed hotels:", hotelList);
         setHotels(hotelList);
@@ -199,23 +193,24 @@ const HotelListingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Room & Guest Field */}
-            <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2">
-              <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
-                ROOM & GUEST
+            {/* Room & Guest Field & Search Button */}
+            <div className="flex-1 max-w-[280px] bg-gray-100 px-6 py-2 flex items-center justify-between gap-4">
+              <div>
+                <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                  ROOM & GUEST
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#D2A256]" />
+                  <span className="text-base font-normal text-gray-900">
+                    1 Room, {adults} Adult{parseInt(adults) > 1 ? 's' : ''}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#D2A256]" />
-                <span className="text-base font-normal text-gray-900">
-                  1 Room, {adults} Adult{parseInt(adults) > 1 ? 's' : ''}
-                </span>
-              </div>
+              {/* Search Button */}
+              <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition-colors shadow-md">
+                <Search className="w-4 h-4" />
+              </button>
             </div>
-
-            {/* Search Button */}
-            <button className="bg-black text-white p-4 rounded-full hover:bg-gray-800 transition-colors ml-4">
-              <Search className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Sort Options */}
@@ -275,7 +270,10 @@ const HotelListingPage: React.FC = () => {
                         {hotel.images.slice(0, 4).map((img, imgIndex) => (
                           <button
                             key={imgIndex}
-                            onClick={() => handleImageSelect(index, imgIndex)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleImageSelect(index, imgIndex);
+                            }}
                             className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                               currentImageIndex === imgIndex
                                 ? "border-white scale-105"
@@ -347,38 +345,17 @@ const HotelListingPage: React.FC = () => {
                             <Check className="w-5 h-5 text-green-600" />
                             <span className="text-gray-700">Free Cancellations</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-5 h-5 text-green-600" />
-                            <span className="text-gray-700">Book @ 0 available</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-5 h-5 text-green-600" />
-                            <span className="text-gray-700">
-                              Breakfast available at extra cost.
-                            </span>
-                          </div>
+                          {hotel.amenities.slice(3).map((amenity, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <Check className="w-5 h-5 text-green-600" />
+                              <span className="text-gray-700">{amenity}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
-                      {/* Right Content - Coupons & Price */}
-                      <div className="w-full lg:w-[320px] flex flex-col justify-between border-l border-gray-100 pl-6">
-                        {/* Coupons Section */}
-                        <div className="mb-4">
-                          <h3 className="font-semibold text-gray-900 mb-3">Coupons</h3>
-                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="flex items-center gap-1 bg-gray-200 px-2 py-1 rounded text-xs font-bold text-gray-700">
-                                <Tag className="w-3 h-3 fill-red-500 text-red-500" />
-                                Discount
-                              </div>
-                              <span className="text-green-600 font-bold text-sm">₹ 565 OFF</span>
-                            </div>
-                            <p className="text-xs text-gray-600 leading-relaxed">
-                              Pay using Canara Bank Credit Cards EMI to avail the offer with No Cost EMI
-                            </p>
-                          </div>
-                        </div>
-
+                      {/* Right Content - Price */}
+                      <div className="w-full lg:w-[320px] flex flex-col justify-end border-l border-gray-100 pl-6">
                         {/* Price Section */}
                         <div className="flex flex-col items-end mt-auto">
                           <span className="text-xs text-gray-500 mb-1">
