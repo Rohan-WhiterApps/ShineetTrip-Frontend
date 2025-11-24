@@ -24,11 +24,16 @@ export const Navbar = () => {
   useEffect(() => {
     const token = localStorage.getItem("shineetrip_token");
     const uid = localStorage.getItem("shineetrip_uid");
+    const name = localStorage.getItem("shineetrip_name");
+    const email = localStorage.getItem("shineetrip_email");
     
     if (token) {
       setIsLoggedIn(true);
-      // Get first letter of UID or use 'U' as default
-      if (uid) {
+      if (name) {
+        setUserInitial(name.charAt(0).toUpperCase());
+      } else if (email) {
+        setUserInitial(email.charAt(0).toUpperCase());
+      } else if (uid) {
         setUserInitial(uid.charAt(0).toUpperCase());
       }
     }
@@ -37,8 +42,16 @@ export const Navbar = () => {
     const handleStorageChange = () => {
       const newToken = localStorage.getItem("shineetrip_token");
       const newUid = localStorage.getItem("shineetrip_uid");
+      const newName = localStorage.getItem("shineetrip_name");
+      const newEmail = localStorage.getItem("shineetrip_email");
+
       setIsLoggedIn(!!newToken);
-      if (newUid) {
+      
+      if (newName) {
+        setUserInitial(newName.charAt(0).toUpperCase());
+      } else if (newEmail) {
+        setUserInitial(newEmail.charAt(0).toUpperCase());
+      } else if (newUid) {
         setUserInitial(newUid.charAt(0).toUpperCase());
       }
     };
@@ -64,6 +77,8 @@ export const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("shineetrip_token");
     localStorage.removeItem("shineetrip_uid");
+    localStorage.removeItem("shineetrip_name");
+    localStorage.removeItem("shineetrip_email");
     setIsLoggedIn(false);
     setShowUserMenu(false);
     navigate("/");
@@ -73,9 +88,16 @@ export const Navbar = () => {
     setIsModalOpen(false);
     const token = localStorage.getItem("shineetrip_token");
     const uid = localStorage.getItem("shineetrip_uid");
+    const name = localStorage.getItem("shineetrip_name");
+    const email = localStorage.getItem("shineetrip_email");
+
     if (token) {
       setIsLoggedIn(true);
-      if (uid) {
+      if (name) {
+        setUserInitial(name.charAt(0).toUpperCase());
+      } else if (email) {
+        setUserInitial(email.charAt(0).toUpperCase());
+      } else if (uid) {
         setUserInitial(uid.charAt(0).toUpperCase());
       }
     }
@@ -222,6 +244,7 @@ export const Navbar = () => {
                 <>
                   {/* User Avatar */}
                   <div 
+                    onClick={() => navigate('/about')}
                     className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl cursor-pointer"
                     style={{
                       background: 'linear-gradient(180.95deg, #AB7E29 0.87%, #EFD08D 217.04%)',
