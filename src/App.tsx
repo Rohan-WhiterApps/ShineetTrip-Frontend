@@ -14,6 +14,7 @@ import Tourspackages from "./pages/Tour_packages";
 import HeroSection from "./pages/LandingPage/HeroSection";
 import AboutPage from "./AboutPage";
 import PackagesPage from "./toursPackages/Pacakges";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 
 
@@ -56,6 +57,7 @@ const App: React.FC = () => {
     <Route path='/packages' element={<PackagesPage/>}/>
   
     <Route path='/about' element={<AboutPage/>}/>
+    <Route path='/privacy-policy' element={<PrivacyPolicy/>}/>
   </Routes>
 
       <Footer />

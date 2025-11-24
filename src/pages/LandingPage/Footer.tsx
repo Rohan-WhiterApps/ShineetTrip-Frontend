@@ -138,7 +138,7 @@ export default function Footer() {
           <p>© 2025 Shinee Trip. All Rights Reserved.</p>
           <div className="flex gap-4">
             {["Privacy Policy", "Terms of Service", "Sitemap"].map((item, i) => (
-              <a key={i} href="#" className="hover:text-[#C9A86A] transition">{item}</a>
+              <a key={i} href={item === "Privacy Policy" ? "/privacy-policy" : "#"} className="hover:text-[#C9A86A] transition">{item}</a>
             ))}
           </div>
         </div>

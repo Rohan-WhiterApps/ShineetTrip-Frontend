@@ -125,7 +125,32 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  .filter-gold {
+    filter: brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg);
+  }
+
+  .group:hover .group-hover\:filter-gold {
+    filter: brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg);
+  }
+
+  /* Navbar icon hover effect */
+  button:hover .nav-icon {
+    filter: brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg) !important;
+  }
+
+  /* Responsive scaling for large screens (1920px+) */
+  @media (min-width: 1536px) {
+    html {
+      font-size: 14px;
+    }
   }
 }

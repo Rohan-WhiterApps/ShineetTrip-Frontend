@@ -129,7 +129,7 @@ export const Navbar = () => {
                 <img 
                   src={HotelIcon} 
                   alt="Hotels" 
-                  className="w-5 h-5 group-hover:scale-110 transition-all"
+                  className="w-5 h-5 transition-all nav-icon"
                   style={{
                     filter: activeTab === "Hotels" 
                       ? "brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg)" 
@@ -148,7 +148,7 @@ export const Navbar = () => {
                 <img 
                   src={FlightIcon} 
                   alt="Flights" 
-                  className="w-5 h-5 group-hover:scale-110 transition-all"
+                  className="w-5 h-5 transition-all nav-icon"
                   style={{
                     filter: activeTab === "Flights" 
                       ? "brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg)" 
@@ -167,7 +167,7 @@ export const Navbar = () => {
                 <img 
                   src={TrainIcon} 
                   alt="Trains" 
-                  className="w-5 h-5 group-hover:scale-110 transition-all"
+                  className="w-5 h-5 transition-all nav-icon"
                   style={{
                     filter: activeTab === "Trains" 
                       ? "brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg)" 
@@ -186,7 +186,7 @@ export const Navbar = () => {
                 <img 
                   src={EventIcon} 
                   alt="Holiday Packages" 
-                  className="w-5 h-5 group-hover:scale-110 transition-all"
+                  className="w-5 h-5 transition-all nav-icon"
                   style={{
                     filter: activeTab === "Holiday Packages" 
                       ? "brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg)" 
@@ -205,7 +205,7 @@ export const Navbar = () => {
                 <img 
                   src={PackageIcon} 
                   alt="Events" 
-                  className="w-5 h-5 group-hover:scale-110 transition-all"
+                  className="w-5 h-5 transition-all nav-icon"
                   style={{
                     filter: activeTab === "Events" 
                       ? "brightness(0) saturate(100%) invert(63%) sepia(25%) saturate(1089%) hue-rotate(359deg)" 

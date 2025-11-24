@@ -75,13 +75,14 @@ export default function JourneyPlanner() {
             {/* Check-in Date */}
             <div>
               <label className="flex items-center gap-2 text-gray-900 font-semibold mb-3 text-sm tracking-wide">
-                <Calendar size={20} className="text-[#D4A76A]" />
+                <Calendar size={20} className="text-white" />
                 CHECK-IN DATE *
               </label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-600 text-left hover:border-gray-400 transition bg-white">
-                    {checkInDate ? format(checkInDate, "MMM dd, yyyy") : "Select date"}
+                  <button className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-600 text-left hover:border-gray-400 transition bg-white flex items-center justify-between">
+                    <span>{checkInDate ? format(checkInDate, "MMM dd, yyyy") : "Select date"}</span>
+                    <Calendar size={18} className="text-[#D4A76A]" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -98,13 +99,14 @@ export default function JourneyPlanner() {
             {/* Check-out Date */}
             <div>
               <label className="flex items-center gap-2 text-gray-900 font-semibold mb-3 text-sm tracking-wide">
-                <Calendar size={20} className="text-amber-600" />
+                <Calendar size={20} className="text-white" />
                 CHECK-OUT DATE *
               </label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-600 text-left hover:border-gray-400 transition bg-white">
-                    {checkOutDate ? format(checkOutDate, "MMM dd, yyyy") : "Select date"}
+                  <button className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-600 text-left hover:border-gray-400 transition bg-white flex items-center justify-between">
+                    <span>{checkOutDate ? format(checkOutDate, "MMM dd, yyyy") : "Select date"}</span>
+                    <Calendar size={18} className="text-[#D4A76A]" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">

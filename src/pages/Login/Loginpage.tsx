@@ -49,15 +49,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     try {
       const user = await signInWithGoogle();
       if (!user) return;
-
-      console.log("user details from google", user.uid);
-
+      console.log("goofle", user);
       // ✅ Get a fresh ID token from Firebase
       const token = await user.getIdToken();
 
       // ✅ Save the token locally for reuse in future API calls
       localStorage.setItem("shineetrip_token", token);
       localStorage.setItem("shineetrip_uid", user.uid);
+      if (user.displayName) localStorage.setItem("shineetrip_name", user.displayName);
+      if (user.email) localStorage.setItem("shineetrip_email", user.email);
 
       console.log("Access token saved to localStorage:", token);
 
@@ -123,7 +123,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
           <div className="flex items-center gap-3">
             <img src={Logo} alt="Shinee Trip" className="h-8 w-auto" />
-            <h1 className="text-lg font-bold text-gray-900">Log in or sign up</h1>
+            <h1 className="text-lg font-bold text-gray-900">Log In or Sign Up</h1>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-900 transition-colors">
             <X className="w-5 h-5" />

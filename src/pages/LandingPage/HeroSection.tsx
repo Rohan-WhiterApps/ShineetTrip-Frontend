@@ -180,7 +180,7 @@ export default function HeroSection() {
           {/* Search Widget Container */}
           {isSearchVisible && (
             <div 
-              className="w-full max-w-5xl mx-auto backdrop-blur-xl rounded-[28px] p-4 sm:p-6 md:p-8 text-white relative animate-in fade-in zoom-in duration-300 mt-20 mb-68"
+              className="w-full max-w-5xl mx-auto backdrop-blur-xl rounded-[28px] p-4 sm:p-6 md:p-8 text-white relative animate-in fade-in zoom-in duration-300 mt-20 mb-32"
               style={{
                 background: 'rgba(0, 0, 0, 0.6)'
               }}
@@ -200,9 +200,6 @@ export default function HeroSection() {
                   <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-wide">PLAN YOUR JOURNEY</h2>
                   <p className="text-gray-300 text-xs sm:text-sm">Select your travel dates and destination to find the perfect getaway</p>
                 </div>
-                <button className="hidden sm:flex items-center gap-1 text-[#C9A961] text-sm font-medium hover:text-white transition-colors mt-2 sm:mt-0">
-                  Advance Search <ChevronDown size={16} />
-                </button>
               </div>
 
               {/* Inputs Grid */}
@@ -380,8 +377,8 @@ export default function HeroSection() {
 
       {/* COMBINED STATS + CATEGORIES SECTION - Single White Card */}
       <div className="pb-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-40 relative z-20">
+        <div className="max-w-7xl mx-auto px-2">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-70 relative z-20">
           
             {/* STATS BAR - Overlapping Top Edge */}
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4">

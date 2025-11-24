@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -206,9 +207,9 @@ export function PhoneLoginForm({ onSuccess }: { onSuccess?: () => void }) {
 
           <div className="text-xs text-gray-600">
             We'll call or text you to confirm your number. Standard message and data rates apply.{" "}
-            <a href="#" className="underline">
+            <Link to="/privacy-policy" className="underline" onClick={onSuccess}>
               Privacy Policy
-            </a>
+            </Link>
           </div>
 
           <Button

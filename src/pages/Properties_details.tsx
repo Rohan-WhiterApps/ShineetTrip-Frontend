@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Users, Maximize2, MapPin, Calendar, Search } from 'lucide-react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Users, Maximize2, MapPin, Calendar, Search, Star, Sparkles, CheckCircle, Key, MessageSquare } from 'lucide-react';
 
 // Room Card Component with Image Carousel and Thumbnails
 const RoomCard = ({ room, hotelImages }: { room: any; hotelImages: string[] }) => {
@@ -194,9 +194,17 @@ const RoomCard = ({ room, hotelImages }: { room: any; hotelImages: string[] }) =
 // Main Component
 export default function RoomBookingPage() {
   const { hotelId } = useParams<{ hotelId: string }>();
+  const [searchParams] = useSearchParams();
   const [hotelData, setHotelData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Get search parameters from URL
+  const location = searchParams.get("location") || hotelData?.city || "";
+  const checkIn = searchParams.get("checkIn") || "";
+  const checkOut = searchParams.get("checkOut") || "";
+  const adults = searchParams.get("adults") || "2";
+  const children = searchParams.get("children") || "0";
 
   useEffect(() => {
     const fetchHotelData = async () => {
@@ -370,6 +378,108 @@ export default function RoomBookingPage() {
               <p className="text-gray-600">No rooms available at this time.</p>
             </div>
           )}
+        </div>
+
+        {/* Guest Favorite Reviews Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="flex items-baseline gap-4 mb-2">
+            <h2 className="text-6xl font-bold text-gray-900">5.0</h2>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Guest Favorite</h3>
+              <p className="text-gray-500 text-sm">This hotel is the guests top favorite based on their rating & reviews.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 my-8 border-t border-b border-gray-200 py-8">
+            {/* Overall Rating */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-gray-900 mb-4">Overall Rating</h4>
+              {[5, 4, 3, 2, 1].map((rating) => (
+                <div key={rating} className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600 w-3">{rating}</span>
+                  <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gray-800 rounded-full" 
+                      style={{ width: rating === 5 ? '100%' : '0%' }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Cleanliness */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Cleanliness</h4>
+              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
+              <Sparkles className="w-8 h-8 text-gray-800" />
+            </div>
+
+            {/* Accuracy */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Accuracy</h4>
+              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
+              <CheckCircle className="w-8 h-8 text-gray-800" />
+            </div>
+
+            {/* Check-In */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Check-In</h4>
+              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
+              <Key className="w-8 h-8 text-gray-800" />
+            </div>
+
+            {/* Communication */}
+            <div className="hidden lg:block">
+              <h4 className="font-semibold text-gray-900 mb-2">Communication</h4>
+              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
+              <MessageSquare className="w-8 h-8 text-gray-800" />
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-4 mb-8">
+            {['Great Hospitality', 'Clean', 'Great Communication', 'Great Communication'].map((tag, idx) => (
+              <div key={idx} className="bg-gray-100 px-6 py-3 rounded-full text-gray-700 font-medium text-sm">
+                {tag}
+              </div>
+            ))}
+          </div>
+
+          {/* Reviews Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((review) => (
+              <div key={review} className="bg-gray-50 rounded-xl p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden">
+                      <img src="https://i.pravatar.cc/150?img=32" alt="User" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900">Adeeb Smiths</div>
+                      <div className="text-xs text-gray-500">6 years on shine trip</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="w-4 h-4 fill-green-600 text-green-600" />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                  Lörem ipsum trare kaling. Var. Dovis dra åt helvete-kapital nollavfall bispet laplavölig. Tiska nidont epijont. Yliga visukal. Seminde teless ultradeguskade yr i sevör. Elgasbil ytiling fäspehet, kåpär. Prenar tinirat, att ortad och kaffeflicka nur. Husade kar ac-förkylning i tetratt. Facebooka posärad, men gubbploga.
+                </p>
+                <button className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-semibold text-gray-900 hover:bg-gray-50">
+                  Show more
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-8 text-center">
+             <button className="bg-white border border-gray-200 px-8 py-3 rounded-lg font-semibold text-gray-900 hover:bg-gray-50">
+              Show all 12 reviews
+            </button>
+          </div>
         </div>
       </div>
     </div>
