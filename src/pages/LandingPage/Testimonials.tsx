@@ -38,7 +38,7 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="py-16 bg-[#2C3C3C] font-opensans">
+    <section className="py-16  mt-12 bg-[#2C3C3C] font-opensans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
@@ -55,7 +55,7 @@ export default function Testimonials() {
             Testimonials
           </p>
 
-          <p className="text-gray-300 text-[15px] max-w-2xl mx-auto leading-relaxed font-opensans">
+          <p className="text-white text-[15px] max-w-2xl mx-auto leading-relaxed font-opensans">
             Discover why thousands of travelers trust us to create their most<br />
             cherished memories across the Himalayas.
           </p>
@@ -88,7 +88,7 @@ export default function Testimonials() {
               </div>
 
               {/* Testimonial Text */}
-              <p className="text-gray-300 mb-8 leading-relaxed relative z-10 text-[14px] font-opensans">
+              <p className="text-white mb-8 leading-relaxed relative z-10 text-[14px] font-opensans">
                 "{testimonial.content}"
               </p>
 
@@ -105,7 +105,7 @@ export default function Testimonials() {
                   <p className="font-bold text-white text-[13px] leading-tight font-opensans">
                     {testimonial.name}
                   </p>
-                  <p className="text-gray-400 text-[12px] mt-0.5 font-opensans">
+                  <p className="text-white text-[12px] mt-0.5 font-opensans">
                     {testimonial.location}
                   </p>
                 </div>
