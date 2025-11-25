@@ -1,6 +1,6 @@
 "use client"
 
-import { Facebook, Instagram, Twitter, Linkedin, Phone, Mail, Send } from "lucide-react"
+import { Facebook, Instagram, Twitter, Linkedin, Phone, Mail } from "lucide-react"
 import { useState } from "react"
 import Logo from "../../assets/Logo.png"
 
@@ -55,7 +55,7 @@ export default function Footer() {
                   href="#"
                   className="border border-white p-1.5 hover:border-[#C9A86A] transition text-white"
                 >
-                  <Icon size={14} />
+                  <Icon size={16} />
                 </a>
               ))}
             </div>
@@ -124,9 +124,13 @@ export default function Footer() {
             />
             <button
               onClick={handleSubscribe}
-              className="bg-[#C9A86A] hover:bg-[#B8975A] px-4 py-2 transition flex items-center justify-center text-white"
-            >
-              <Send size={14} />
+              className="bg-[#D2A256] hover:bg-[#B8956A] transition flex items-center justify-center text-white"
+              style={{
+                width: '68px',
+                height: '45.6px'
+              }}
+           > 
+              <Mail size={18} className="text-white" />
             </button>
           </div>
         </div>

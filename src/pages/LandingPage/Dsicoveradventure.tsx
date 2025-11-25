@@ -68,14 +68,22 @@ export default function PopularDestinations() {
   if (destinations.length === 0) return <div className="text-center py-16 text-gray-600 font-opensans">No destinations available</div>
 
   return (
-    <div className="w-full bg-gray-50 py-2 px-4 font-opensans">
+    <div className="w-full bg-white py-2 px-4 font-opensans">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2 font-opensans">Popular Destinations</h2>
-          <p className="text-gray-600 text-base font-opensans">
-            We have selected some best locations around the world for you.
-          </p>
+        <div className="mb-12 flex flex-col md:flex-row justify-between items-end gap-4">
+          <div>
+            <h2 className="text-[42px] leading-[20px] font-bold tracking-[0px] text-[#2C3C3C] mb-6 font-opensans align-middle">Popular Destinations</h2>
+            <p className="text-[24px] leading-[20px] font-normal tracking-[0px] text-gray-600 font-opensans">
+              We have selected some best locations around the world for you.
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate('/hotellists')}
+            className="bg-white border border-[#C9A86A] text-[#C9A86A] px-8 py-2 rounded-full font-opensans font-semibold text-[18px] leading-[20px] tracking-[0px] text-center hover:shadow-md transition-all whitespace-nowrap mb-2"
+          >
+            Explore
+          </button>
         </div>
 
         {/* Dynamic Grid Layout */}
@@ -137,7 +145,7 @@ function Card({
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
       <div className="absolute bottom-6 left-6 text-white font-opensans">
         <h3 className="text-2xl font-bold mb-1 font-opensans">{destination.name}</h3>
-        <p className="text-sm text-gray-200 font-opensans">{destination.description}</p>
+        <p className="text-[20px] leading-[20px] font-normal tracking-[0px] text-white font-opensans align-middle">{destination.description}</p>
       </div>
     </div>
   )

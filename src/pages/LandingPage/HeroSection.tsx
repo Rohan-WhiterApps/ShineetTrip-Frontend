@@ -38,6 +38,8 @@ export default function HeroSection() {
       { name: "Goa", image: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&q=80" },
       { name: "Phuket", image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&q=80" },
       { name: "Bali", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80" },
+      { name: "Bora Bora", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80" },
+      { name: "Maui", image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&q=80" },
     ],
     "Weekend Getaway": [
       { name: "Shimla", image: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80" },
@@ -67,8 +69,8 @@ export default function HeroSection() {
   const cardsPerSlide = 4;
   const maxSlide = Math.ceil(currentDestinations.length / cardsPerSlide) - 1;
 
-  const handlePrev = () => setSlideIndex((p) => (p > 0 ? p - 1 : maxSlide));
-  const handleNext = () => setSlideIndex((p) => (p < maxSlide ? p + 1 : 0));
+  const handlePrev = () => setSlideIndex((p) => (p > 0 ? p - 1 : 0));
+  const handleNext = () => setSlideIndex((p) => (p < maxSlide ? p + 1 : maxSlide));
 
   const visibleDestinations = currentDestinations.slice(slideIndex * cardsPerSlide, slideIndex * cardsPerSlide + cardsPerSlide);
 
@@ -376,9 +378,9 @@ export default function HeroSection() {
       </div>
 
       {/* COMBINED STATS + CATEGORIES SECTION - Single White Card */}
-      <div className="pb-20 bg-gray-50">
+      <div className="pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-2">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-70 relative z-20">
+          <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(255,255,255,0.7)] border border-gray-300 p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-70 relative z-20">
           
             {/* STATS BAR - Overlapping Top Edge */}
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4">
@@ -452,13 +454,23 @@ export default function HeroSection() {
             <div className="flex justify-center gap-4 mt-3">
               <button 
                 onClick={handlePrev} 
-                className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center hover:bg-[#C9A961] hover:text-white transition-all"
+                disabled={slideIndex === 0}
+                className={`w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center transition-all ${
+                  slideIndex === 0 
+                    ? "text-gray-400 cursor-not-allowed" 
+                    : "hover:bg-[#C9A961] hover:text-white"
+                }`}
               >
                 <ChevronLeft size={24} />
               </button>
               <button 
                 onClick={handleNext} 
-                className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center hover:bg-[#C9A961] hover:text-white transition-all"
+                disabled={slideIndex >= maxSlide}
+                className={`w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center transition-all ${
+                  slideIndex >= maxSlide 
+                    ? "text-gray-400 cursor-not-allowed" 
+                    : "hover:bg-[#C9A961] hover:text-white"
+                }`}
               >
                 <ChevronRight size={24} />
               </button>

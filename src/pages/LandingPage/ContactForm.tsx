@@ -14,6 +14,7 @@ export default function ContactForm() {
     destination: "",
     message: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -22,6 +23,11 @@ export default function ContactForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Prevent multiple submissions
+    if (isSubmitting) return
+    
+    setIsSubmitting(true)
     
     try {
       // Create FormData for multipart/form-data request
@@ -80,13 +86,15 @@ export default function ContactForm() {
         duration: 5000,
         position: 'top-center',
       });
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   return (
     <>
       <Toaster />
-      <section className="py-24 bg-[#F5F5F0] font-opensans">
+      <section className="py-24 bg-white font-opensans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column */}
@@ -100,14 +108,14 @@ export default function ContactForm() {
               <p className="text-4xl md:text-5xl text-[#C9A86A] font-light italic">Himalayan Journey</p>
             </div>
             
-            <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+            <p className="text-gray-600 text-[15px] leading-[36.91px] font-normal tracking-[0px] font-opensans mb-[15px]">
               Let our travel curators design your perfect escape. Whether it's a romantic getaway, family adventure, or spiritual journey, we craft experiences that resonate with your soul.
             </p>
 
             {/* Contact Info Boxes */}
-            <div className="space-y-3">
+            <div className="space-y-[30px]">
               {/* Call Us */}
-              <div className="bg-[#FBF8F3] p-4 rounded-sm border-l-4 border-[#C9A86A]">
+              <div className="bg-white p-4 rounded-sm border-l-4 border-[#C9A86A]">
                 <div className="flex items-start gap-4">
                   <div className="bg-[#C9A86A] p-3 rounded-full">
                     <Phone className="text-white" size={24} />
@@ -115,13 +123,13 @@ export default function ContactForm() {
                   <div>
                     <p className="text-gray-500 text-sm mb-1 uppercase tracking-wide">Call Us</p>
                     <p className="text-[#2C3C3C] text-xl font-semibold mb-1">+91 98765 43210</p>
-                    <p className="text-gray-500 text-sm">Available 24/7</p>
+                    <p className="text-gray-500  font-normal  text-sm">Available 24/7</p>
                   </div>
                 </div>
               </div>
 
               {/* Email Us */}
-              <div className="bg-[#FBF8F3] p-4 rounded-sm border-l-4 border-[#C9A86A]">
+              <div className="bg-white p-4 rounded-sm border-l-4 border-[#C9A86A]">
                 <div className="flex items-start gap-4">
                   <div className="bg-[#C9A86A] p-3 rounded-full">
                     <Mail className="text-white" size={24} />
@@ -129,13 +137,13 @@ export default function ContactForm() {
                   <div>
                     <p className="text-gray-500 text-sm mb-1 uppercase tracking-wide">Email Us</p>
                     <p className="text-[#2C3C3C] text-xl font-semibold mb-1">info@shineetrip.com</p>
-                    <p className="text-gray-500 text-sm">Response within 2 hours</p>
+                    <p className="text-gray-500  font-normal  text-sm">Response within 2 hours</p>
                   </div>
                 </div>
               </div>
 
               {/* Our Offices */}
-              <div className="bg-[#FBF8F3] p-4 rounded-sm border-l-4 border-[#C9A86A]">
+              <div className="bg-white p-4 rounded-sm border-l-4 border-[#C9A86A]">
                 <div className="flex items-start gap-4">
                   <div className="bg-[#C9A86A] p-3 rounded-full">
                     <MapPin className="text-white" size={24} />
@@ -143,11 +151,19 @@ export default function ContactForm() {
                   <div>
                     <p className="text-gray-500 text-sm mb-1 uppercase tracking-wide">Our Offices</p>
                     <p className="text-[#2C3C3C] text-xl font-semibold mb-1">Himachal | Mumbai</p>
-                    <p className="text-gray-500 text-sm">Chandigarh | Kathmandu</p>
+                    <p className="text-gray-500  font-normal  text-sm">Chandigarh | Kathmandu</p>
                   </div>
                 </div>
               </div>
             </div>
+            
+            {/* Write a Review Button */}
+            <button 
+              className="w-full bg-black text-white py-4 mt-[30px] rounded-md font-semibold text-base hover:bg-black transition-colors"
+              onClick={() => window.open('https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review', '_blank')}
+            >
+              Write a Review
+            </button>
           </div>
 
           {/* Right Column - Form */}
@@ -156,8 +172,8 @@ export default function ContactForm() {
             <div className="absolute -top-4 -right-4 w-20 h-20 border-t-4 border-r-4 border-[#C9A86A]"></div>
             <div className="absolute -bottom-4 -left-4 w-20 h-20 border-b-4 border-l-4 border-[#C9A86A]"></div>
             
-            <div className="bg-white p-5 shadow-lg relative">
-              <div className="space-y-3">
+            <form onSubmit={handleSubmit} className="bg-white p-5 shadow-lg relative">
+              <div className="space-y-[30px]">
                 {/* First Name & Last Name */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -255,14 +271,14 @@ export default function ContactForm() {
 
                 {/* Submit Button */}
                 <button
-                  onClick={handleSubmit}
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full text-white py-3 text-base font-medium transition flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    background: 'linear-gradient(90deg, #AB7E29 -21.29%, #EFD08D 87.59%)',
-                    boxShadow: '0px 2.52px 7.57px 2.52px #00000026, 0px 1.26px 2.52px 0px #0000004D'
+                    background: 'linear-gradient(90deg, #C9A86A 0%, #E8C78A 100%)',
                   }}
-                  className="w-full text-white py-3 text-base font-medium transition flex items-center justify-center gap-2 hover:opacity-90"
                 >
-                  Send Enquiry
+                  {isSubmitting ? 'Sending...' : 'Send Enquiry'}
                   <Send size={20} />
                 </button>
 
@@ -270,7 +286,7 @@ export default function ContactForm() {
                   Our travel experts will respond within 2 hours
                 </p>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>
