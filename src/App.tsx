@@ -21,51 +21,52 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const App: React.FC = () => {
 
- 
-  return (
+ 
+  return (
 <>
-      <Navbar />
-      <Routes>
-  <Route
-    path="/"
-    element={
-      <>
-        <section id="home">
-          <HeroSection />
-        </section>
+      <Navbar />
+      <Routes>
+  <Route
+    path="/"
+    element={
+      <>
+        <section id="home">
+          <HeroSection />
+        </section>
 
-        <section id="adventure">
-          {<DiscoverAdventure /> }
-        </section>
+        <section id="adventure">
+          {<DiscoverAdventure /> }
+        </section>
 
 
-        <section id="testimonials">
-          { <Testimonials /> }
-        </section>
+        <section id="testimonials">
+          { <Testimonials /> }
+        </section>
 
-        <section id="contact">
-          { <ContactForm /> }
-        </section>
-      </>
-    }
-  /> 
-  <Route path="/room-booking/:hotelId" element={<RoomBookingPage />} />
-  <Route path="/booking" element={<BookingPage />} />
-  <Route path="/hotellists" element={<HotelListingPage/>} />
-  <Route path="/tours" element={<Tourspackages/>}/>
-  
-    <Route path='/packages' element={<PackagesPage/>}/>
-  
-    <Route path='/about' element={<AboutPage/>}/>
-    <Route path='/privacy-policy' element={<PrivacyPolicy/>}/>
-  </Routes>
+        <section id="contact">
+          { <ContactForm /> }
+        </section>
+      </>
+    }
+  /> 
+  <Route path="/room-booking/:hotelId" element={<RoomBookingPage />} />
+  <Route path="/booking" element={<BookingPage />} />
+  <Route path="/hotellists" element={<HotelListingPage/>} />
+  <Route path="/tours" element={<Tourspackages/>}/>
+  
 
-      <Footer />
-      
-  </>
-  );
+  
+    <Route path='/packages' element={<PackagesPage/>}/>
+  
+    <Route path='/about' element={<AboutPage/>}/>
+    <Route path='/privacy-policy' element={<PrivacyPolicy/>}/>
+  </Routes>
+
+      <Footer />
+      
+  </>
+  );
 };
 
 
 export default App;
-
