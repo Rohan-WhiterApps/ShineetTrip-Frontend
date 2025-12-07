@@ -1,487 +1,350 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Users, Maximize2, MapPin, Calendar, Search, Star, Sparkles, CheckCircle, Key, MessageSquare } from 'lucide-react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+// Required icons for Search Bar
+import { MapPin, Calendar, Search, Users } from 'lucide-react'; 
 
-// Room Card Component with Image Carousel and Thumbnails
-const RoomCard = ({ room, hotelImages }: { room: any; hotelImages: string[] }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const price = room.price;
-  const occupancy = room.occupancyConfiguration;
+import { RoomDetailsModal } from './Rooms_details_page'; 
+import RoomCard from '../components/ui/RoomCard'; 
+import { AvailabilityCheckModal } from '../components/ui/AvailabilityCheckModal'; 
+import HotelReviews from '../components/ui/HotelReviews'; 
 
-  if (!price) {
-    return null;
-  }
 
-  const roomImages = hotelImages.length > 0 ? hotelImages : [];
-  
-  const goToPrevious = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? roomImages.length - 1 : prev - 1));
-  };
-
-  const goToNext = () => {
-    setCurrentImageIndex((prev) => (prev === roomImages.length - 1 ? 0 : prev + 1));
-  };
-
-  const basePrice = parseFloat(price.retail_price);
-  const taxPrice = parseFloat(price.retail_tax_price);
-  const taxAmount = taxPrice - basePrice;
-
-  return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
-      <div className="flex gap-6">
-        {/* Image Carousel Section */}
-        <div className="w-64 flex-shrink-0">
-          {/* Main Image */}
-          <div className="relative h-48 rounded-lg overflow-hidden mb-2 group">
-            {roomImages.length > 0 ? (
-              <>
-                <img 
-                  src={roomImages[currentImageIndex]} 
-                  alt={room.room_type} 
-                  className="w-full h-full object-cover"
-                />
-                {roomImages.length > 1 && (
-                  <>
-                    <button
-                      onClick={goToPrevious}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <ChevronLeft className="w-4 h-4 text-gray-800" />
-                    </button>
-                    <button
-                      onClick={goToNext}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <ChevronRight className="w-4 h-4 text-gray-800" />
-                    </button>
-                  </>
-                )}
-              </>
-            ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-400">No Image</span>
-              </div>
-            )}
-          </div>
-
-          {/* Thumbnail Navigation */}
-          {roomImages.length > 1 && (
-            <div className="flex gap-2">
-              {roomImages.slice(0, 4).map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentImageIndex(idx)}
-                  className={`w-14 h-14 rounded overflow-hidden border-2 transition-all ${
-                    currentImageIndex === idx ? 'border-green-600' : 'border-gray-300 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Room Details Section */}
-        <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{room.room_type}</h3>
-          
-          {/* Guest and Size Info */}
-          <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
-            {occupancy && (
-              <>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{occupancy.max_occ} Guests</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Maximize2 className="w-4 h-4" />
-                  <span>200sqft</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Description */}
-          <p className="text-sm text-gray-700 mb-4 line-clamp-2">
-            {room.description || room.short_description || 'The rooms have a state-of-the-art design, curated to serve the modern traveler.'}
-            {' '}
-            <span className="text-blue-600 cursor-pointer hover:underline">more info</span>
-          </p>
-
-          {/* Pricing Options */}
-          <div className="flex gap-4">
-            {/* Room Only Option 1 */}
-            <div className="flex-1 border border-gray-300 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="font-semibold text-sm">Room Only</div>
-                  <div className="text-xs text-blue-600 cursor-pointer hover:underline">Inclusions & Policies</div>
-                </div>
-              </div>
-              <div className="mb-2">
-                <div className="text-xs text-gray-500 mb-1">Standard Rate</div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
-                  <span className="text-gray-400 line-through text-sm">INR {taxPrice.toLocaleString()}</span>
-                </div>
-                <div className="text-xs text-gray-500">(for 1 night) Incl. of taxes & fees</div>
-              </div>
-              <button className="w-full bg-black text-white py-2 rounded font-semibold hover:bg-gray-800 transition-colors">
-                BOOK NOW
-              </button>
-            </div>
-
-            {/* Room Only Option 2 */}
-            <div className="flex-1 border border-gray-300 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="font-semibold text-sm">Room Only</div>
-                  <div className="text-xs text-blue-600 cursor-pointer hover:underline">Inclusions & Policies</div>
-                </div>
-              </div>
-              <div className="mb-2">
-                <div className="text-xs text-gray-500 mb-1">Discounted Rate</div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
-                  <span className="text-gray-400 line-through text-sm">INR {taxPrice.toLocaleString()}</span>
-                </div>
-                <div className="text-xs text-gray-500">(for 1 night) Incl. of taxes & fees</div>
-              </div>
-              <button className="w-full bg-black text-white py-2 rounded font-semibold hover:bg-gray-800 transition-colors">
-                BOOK NOW
-              </button>
-            </div>
-
-            {/* Room Only Option 3 */}
-            <div className="flex-1 border border-gray-300 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="font-semibold text-sm">Room Only</div>
-                  <div className="text-xs text-blue-600 cursor-pointer hover:underline">Inclusions & Policies</div>
-                </div>
-              </div>
-              <div className="mb-2">
-                <div className="text-xs text-gray-500 mb-1">Best Rate</div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
-                  <span className="text-gray-400 line-through text-sm">INR {taxPrice.toLocaleString()}</span>
-                </div>
-                <div className="text-xs text-gray-500">(for 1 night) Incl. of taxes & fees</div>
-              </div>
-              <button className="w-full bg-black text-white py-2 rounded font-semibold hover:bg-gray-800 transition-colors">
-                BOOK NOW
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Price Badge on Right */}
-        <div className="flex flex-col items-end justify-start">
-          <div className="text-right mb-2">
-            <div className="text-xs text-gray-500">+ ₹ {taxAmount.toFixed(0)} taxes & fees per night</div>
-            <div className="text-sm text-gray-400">₹ {taxPrice.toLocaleString()}</div>
-          </div>
-          <div className="bg-green-600 text-white px-4 py-2 rounded-lg">
-            <div className="text-2xl font-bold">₹ {(basePrice / 1000).toFixed(1)}k</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Main Component
+// Main Component: RoomBookingPage
 export default function RoomBookingPage() {
-  const { hotelId } = useParams<{ hotelId: string }>();
-  const [searchParams] = useSearchParams();
-  const [hotelData, setHotelData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const { hotelId } = useParams<{ hotelId: string }>();
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
 
-  // Get search parameters from URL
-  const location = searchParams.get("location") || hotelData?.city || "";
-  const checkIn = searchParams.get("checkIn") || "";
-  const checkOut = searchParams.get("checkOut") || "";
-  const adults = searchParams.get("adults") || "2";
-  const children = searchParams.get("children") || "0";
+    // --- Component States ---
+    const [hotelData, setHotelData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedRoom, setSelectedRoom] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchHotelData = async () => {
-      if (!hotelId) {
-        setError('No hotel ID provided');
-        setLoading(false);
-        return;
-      }
+    // NOTE: Ye states ab use nahi honge agar hum direct payment karte hain, 
+    // lekin hum inhe declare rakhenge taaki component structure intact rahe.
+    const [isAvailabilityCheckOpen, setIsAvailabilityCheckOpen] = useState(false);
+    const [roomForCheck, setRoomForCheck] = useState<any>(null);
 
-      try {
-        const token = localStorage.getItem('shineetrip_token');
-        const response = await fetch(`http://46.62.160.188:3000/properties/${hotelId}`, {
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json',
-          },
-        });
+    // --- Search Parameters (Read from URL and made editable) ---
+    const initialLocation = searchParams.get("location") || "";
+    const initialCheckIn = searchParams.get("checkIn") || "";
+    const initialCheckOut = searchParams.get("checkOut") || "";
+    const initialAdults = searchParams.get("adults") || "2";
+    const initialChildren = searchParams.get("children") || "0";
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch hotel data: ${response.status}`);
-        }
+    // ✅ New States for Editable Fields
+    const [currentLocation, setCurrentLocation] = useState(initialLocation);
+    const [currentCheckIn, setCurrentCheckIn] = useState(initialCheckIn);
+    const [currentCheckOut, setCurrentCheckOut] = useState(initialCheckOut);
+    const [currentAdults, setCurrentAdults] = useState(initialAdults);
+    const [currentChildren, setCurrentChildren] = useState(initialChildren);
+        
+    // Ab searchParamData current states se banega jab modal open hoga
+    const searchParamData = { 
+        location: currentLocation, 
+        checkIn: currentCheckIn, 
+        checkOut: currentCheckOut, 
+        adults: currentAdults, 
+        children: currentChildren 
+    };
+    
+    // Original URL params (API call ke liye, jo URL mein hain)
+    const location = searchParams.get("location") || "";
+    const checkIn = searchParams.get("checkIn") || "";
+    const checkOut = searchParams.get("checkOut") || "";
+    const adults = searchParams.get("adults") || "2";
+    const children = searchParams.get("children") || "0";
 
-        const data = await response.json();
-        setHotelData(data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching hotel data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load hotel data');
-        setLoading(false);
-      }
-    };
-
-    fetchHotelData();
-  }, [hotelId]);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading hotel details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !hotelData) {
-    return (
-      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error || 'Hotel not found'}</p>
-          <button
-            onClick={() => window.history.back()}
-            className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const hotelImages = hotelData.images?.map((img: any) => img.img_link) || [];
-  const roomTypes = hotelData.roomTypes?.filter((room: any) => room.show_front_office && room.is_active) || [];
-
-  return (
-    <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
-      {/* Search Bar - Matching Hotel Listing Page */}
-      <div className="bg-white border-b border-gray-200 sticky top-[116px] z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          {/* Search Fields */}
-               <div className="flex items-center justify-center gap-0 mb-4">
-                    {/* Location Field */}
-                    <div className="flex-1 max-w-[250px] bg-gray-100 px-6 py-2 border-r border-gray-300">
-                      <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
-                        CITY, AREA OR PROPERTY
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#D2A256]" />
-                        <span className="text-base font-normal text-gray-900">{hotelData.city || "Manali"}</span>
-                      </div>
-                    </div>
-        
-                    {/* Check-in Field */}
-                    <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
-                      <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
-                        CHECK-IN
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-[#D2A256]" />
-                        <span className="text-base font-normal text-gray-900">
-                          {hotelData.checkIn ? new Date(hotelData.checkIn).toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : "Fri, 21 Nov 2025"}
-                        </span>
-                      </div>
-                    </div>
-        
-                    {/* Check-out Field */}
-                    <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
-                      <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
-                        CHECK-OUT
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-[#D2A256]" />
-                        <span className="text-base font-normal text-gray-900">
-                           {hotelData.checkOut ? new Date(hotelData.checkOut).toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : "Sat, 22 Nov 2025"}
-                        </span>
-                      </div>
-                    </div>
-        
-                    {/* Room & Guest Field & Search Button */}
-                    <div className="flex-1 max-w-[280px] bg-gray-100 px-6 py-2 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
-                          ROOM & GUEST
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-[#D2A256]" />
-                          <span className="text-base font-normal text-gray-900">
-                           1 Room, 2 Adults
-                          </span>
-                        </div>
-                      </div>
-                      {/* Search Button */}
-                      <button className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition-colors shadow-md">
-                        <Search className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+    // --- Handlers (Modal & Booking) ---
+    const handleOpenModal = (roomData: any) => { setSelectedRoom(roomData); setIsModalOpen(true); };
+    const handleCloseModal = () => { setIsModalOpen(false); setSelectedRoom(null); };
+    
+    // NOTE: handleCloseAvailabilityCheck ab sirf ek placeholder hai, lekin hum use rakhenge
+    const handleCloseAvailabilityCheck = () => { setIsAvailabilityCheckOpen(false); setRoomForCheck(null); }; 
 
 
+    // ✅ FIXED LOGIC: Yeh function ab seedha handleProceedToPayment ko call karega
+    const handleProceedToPayment = (roomData: any) => { 
+        const roomDetails = {
+            roomId: roomData.id, roomName: roomData.room_type, retailPrice: roomData.price.retail_price, 
+            taxPrice: roomData.price.retail_tax_price, checkIn: checkIn, checkOut: checkOut,
+        };
+        const queryString = new URLSearchParams(roomDetails).toString();
+        navigate(`/booking?${queryString}`);
+        
+        // Agar pehle modal open tha to use band kar de
+        handleCloseAvailabilityCheck(); 
+    };
+    
+    // ✅ NEW handleBookNow: Ab yeh seedha payment logic ko call karega
+    const handleBookNow = (roomData: any) => { 
+        handleProceedToPayment(roomData);
+    };
+    
+    // ✅ NEW: Function to trigger a fresh search
+    const handleSearch = () => {
+        const newSearchParams = new URLSearchParams({
+            location: currentLocation,
+            checkIn: currentCheckIn,
+            checkOut: currentCheckOut,
+            adults: currentAdults,
+            children: currentChildren,
+        }).toString();
+        
+        // Navigate back to listing page with new parameters
+        navigate(`/hotellists?${newSearchParams}`);
+    };
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-medium text-sm">1</div>
-              <span className="font-medium text-sm">Room 1</span>
-            </div>
-            <div className="w-24 h-px bg-gray-300"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-medium text-sm">2</div>
-              <span className="text-gray-500 text-sm">Reservation</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    // --- Data Fetching (Fetch Hotel Details ONLY) ---
+    useEffect(() => {
+        const fetchHotelData = async () => {
+            if (!hotelId) { setError('No hotel ID provided'); setLoading(false); return; }
+            
+            const token = localStorage.getItem('shineetrip_token');
+            
+            // Mandatory Token Check 
+            if (!token) {
+                console.error("Authorization Required: Token missing. Redirecting to home/login.");
+                setError("You must be logged in to view property details.");
+                setLoading(false);
+                navigate('/'); 
+                return; 
+            }
+            
+            try {
+                const response = await fetch(`http://46.62.160.188:3000/properties/${hotelId}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                });
+                
+                if (!response.ok) {
+                    const errorStatus = response.status;
+                    if (errorStatus === 403 || errorStatus === 401) {
+                        localStorage.removeItem('shineetrip_token'); 
+                        navigate('/'); 
+                        throw new Error("Session expired. Please log in again.");
+                    }
+                    throw new Error(`Failed to fetch hotel data: ${errorStatus}`);
+                }
+                
+                const data = await response.json();
+                setHotelData(data);
+                setLoading(false);
+            } catch (err) { 
+                setError(err instanceof Error ? err.message : 'Failed to load hotel data'); 
+                setLoading(false); 
+            }
+        };
+        fetchHotelData();
+    }, [hotelId, navigate]);
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Hotel Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">{hotelData.name}</h1>
-          <div className="flex items-center gap-2 text-gray-600 text-sm">
-            <span>{hotelData.city}</span>
-            <span>|</span>
-            <span>1.5km drive to {hotelData.address}</span>
-          </div>
-        </div>
+    useEffect(() => { window.scrollTo(0, 0); }, []);
 
-        {/* Room Types */}
-        <div className="mb-8">
-          {roomTypes.length > 0 ? (
-            roomTypes.map((room: any) => (
-              <RoomCard key={room.id} room={room} hotelImages={hotelImages} />
-            ))
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-              <p className="text-gray-600">No rooms available at this time.</p>
-            </div>
-          )}
-        </div>
+    // --- Conditional Render (Pre-JSX Checks) ---
+    const token = localStorage.getItem('shineetrip_token');
+    
+    // Check if redirect was triggered (token missing but not loading anymore)
+    if (!token && !loading && !hotelData) {
+        return (
+            <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-red-600 mb-4">Please log in to access this page.</p>
+                </div>
+            </div>
+        );
+    }
+    
+    // 1. Loading State UI
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading hotel details...</p>
+                </div>
+            </div>
+        );
+    }
 
-        {/* Guest Favorite Reviews Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-          <div className="flex items-baseline gap-4 mb-2">
-            <h2 className="text-6xl font-bold text-gray-900">5.0</h2>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900">Guest Favorite</h3>
-              <p className="text-gray-500 text-sm">This hotel is the guests top favorite based on their rating & reviews.</p>
-            </div>
-          </div>
+    // 2. Error/Data Not Found State UI
+    if (error || !hotelData) {
+        return (
+            <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-red-600 mb-4">{error || 'Hotel not found'}</p>
+                    <button onClick={() => window.history.back()} className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    
+    // --- Data Calculation (Only runs if data is available) ---
+    const hotelImages = hotelData?.images?.map((img: any) => img.image) || []; 
+    const roomTypes = hotelData?.roomTypes?.filter((room: any) => room.show_front_office && room.is_active) || [];
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 my-8 border-t border-b border-gray-200 py-8">
-            {/* Overall Rating */}
-            <div className="space-y-2">
-              <h4 className="font-semibold text-gray-900 mb-4">Overall Rating</h4>
-              {[5, 4, 3, 2, 1].map((rating) => (
-                <div key={rating} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600 w-3">{rating}</span>
-                  <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gray-800 rounded-full" 
-                      style={{ width: rating === 5 ? '100%' : '0%' }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+    // --- Main Component Render ---
+    return (
+        <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
+            {/* FULL SEARCH BAR & PROGRESS STEPS UI */}
+            <div className="bg-white border-b border-gray-200 sticky top-[116px] z-10 shadow-sm">
+                <div className="max-w-7xl mx-auto px-6 py-4">
+                    {/* Search Fields (Now Editable) */}
+                    <div className="flex items-center justify-center gap-0 mb-4">
+                        {/* Location Field */}
+                        <div className="flex-1 max-w-[250px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+                            <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                                CITY, AREA OR PROPERTY
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-[#D2A256]" />
+                                {/* ✅ Editable Input */}
+                                <input 
+                                    type="text" 
+                                    value={currentLocation}
+                                    onChange={(e) => setCurrentLocation(e.target.value)}
+                                    className="text-base font-normal text-gray-900 bg-transparent w-full focus:outline-none"
+                                    placeholder="Enter location"
+                                />
+                            </div>
+                        </div>
 
-            {/* Cleanliness */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Cleanliness</h4>
-              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
-              <Sparkles className="w-8 h-8 text-gray-800" />
-            </div>
+                        {/* Check-in Field */}
+                        <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+                            <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                                CHECK-IN
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-[#D2A256]" />
+                                {/* ✅ Editable Input (Date type for consistency) */}
+                                <input 
+                                    type="date" 
+                                    value={currentCheckIn} 
+                                    onChange={(e) => setCurrentCheckIn(e.target.value)}
+                                    className="text-base font-normal text-gray-900 bg-transparent w-full focus:outline-none"
+                                />
+                            </div>
+                        </div>
+        
+                        {/* Check-out Field */}
+                        <div className="flex-1 max-w-[200px] bg-gray-100 px-6 py-2 border-r border-gray-300">
+                            <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                                CHECK-OUT
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-[#D2A256]" />
+                                {/* ✅ Editable Input (Date type for consistency) */}
+                                <input 
+                                    type="date" 
+                                    value={currentCheckOut} 
+                                    onChange={(e) => setCurrentCheckOut(e.target.value)}
+                                    className="text-base font-normal text-gray-900 bg-transparent w-full focus:outline-none"
+                                />
+                            </div>
+                        </div>
+        
+                        {/* Room & Guest Field & Search Button */}
+                        <div className="flex-1 max-w-[280px] bg-gray-100 px-6 py-2 flex items-center justify-between gap-4">
+                            <div>
+                                <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                                    ROOM & GUEST
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-[#D2A256]" />
+                                    {/* ✅ Editable Guest Count (Simple input, ideally a modal/stepper is better) */}
+                                    <input 
+                                        type="number"
+                                        min="1"
+                                        value={currentAdults}
+                                        onChange={(e) => setCurrentAdults(e.target.value)}
+                                        className="text-base font-normal text-gray-900 bg-transparent w-12 focus:outline-none"
+                                    />
+                                    <span className="text-base font-normal text-gray-900">Adults</span>
+                                </div>
+                            </div>
+                            {/* Search Button - Triggers navigation to Hotel Listing Page */}
+                            <button 
+                                onClick={handleSearch} // ✅ Navigate to hotel listing with new params
+                                className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition-colors shadow-md"
+                            >
+                                <Search className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                    {/* Progress Steps */}
+                    <div className="flex items-center justify-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-medium text-sm">1</div>
+                            <span className="font-medium text-sm">Room 1</span>
+                        </div>
+                        <div className="w-24 h-px bg-gray-300"></div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-medium text-sm">2</div>
+                            <span className="text-gray-500 text-sm">Reservation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            {/* Accuracy */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Accuracy</h4>
-              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
-              <CheckCircle className="w-8 h-8 text-gray-800" />
-            </div>
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                {/* Hotel Header */}
+                <div className="mb-4">
+                    <h1 className="text-2xl font-bold text-gray-900">{hotelData?.name}</h1> 
+                    <div className="flex items-center gap-2 text-gray-600 text-sm">
+                        <span>{hotelData?.city || location}</span> 
+                        <span>|</span>
+                        <span>1.5km drive to {hotelData?.address}</span>
+                    </div>
+                </div>
 
-            {/* Check-In */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Check-In</h4>
-              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
-              <Key className="w-8 h-8 text-gray-800" />
-            </div>
+                {/* Room Types - Using imported RoomCard */}
+                <div className="mb-8">
+                    {roomTypes.length > 0 ? (
+                        roomTypes.map((room: any) => (
+                            <RoomCard 
+                                key={room.id} 
+                                room={room} 
+                                hotelImages={hotelImages} 
+                                onMoreInfoClick={handleOpenModal} 
+                                onBookNowClick={handleBookNow} 
+                            />
+                        ))
+                    ) : (
+                        <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                            <p className="text-gray-600">No rooms available at this time.</p>
+                        </div>
+                    )}
+                </div>
 
-            {/* Communication */}
-            <div className="hidden lg:block">
-              <h4 className="font-semibold text-gray-900 mb-2">Communication</h4>
-              <div className="text-2xl font-bold text-gray-900 mb-2">5.0</div>
-              <MessageSquare className="w-8 h-8 text-gray-800" />
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-4 mb-8">
-            {['Great Hospitality', 'Clean', 'Great Communication', 'Great Communication'].map((tag, idx) => (
-              <div key={idx} className="bg-gray-100 px-6 py-3 rounded-full text-gray-700 font-medium text-sm">
-                {tag}
-              </div>
-            ))}
-          </div>
-
-          {/* Reviews Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((review) => (
-              <div key={review} className="bg-gray-50 rounded-xl p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden">
-                      <img src="https://i.pravatar.cc/150?img=32" alt="User" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900">Adeeb Smiths</div>
-                      <div className="text-xs text-gray-500">6 years on shine trip</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-4 h-4 fill-green-600 text-green-600" />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                  Lörem ipsum trare kaling. Var. Dovis dra åt helvete-kapital nollavfall bispet laplavölig. Tiska nidont epijont. Yliga visukal. Seminde teless ultradeguskade yr i sevör. Elgasbil ytiling fäspehet, kåpär. Prenar tinirat, att ortad och kaffeflicka nur. Husade kar ac-förkylning i tetratt. Facebooka posärad, men gubbploga.
-                </p>
-                <button className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-semibold text-gray-900 hover:bg-gray-50">
-                  Show more
-                </button>
-              </div>
-            ))}
-          </div>
-          
-          <div className="mt-8 text-center">
-             <button className="bg-white border border-gray-200 px-8 py-3 rounded-lg font-semibold text-gray-900 hover:bg-gray-50">
-              Show all 12 reviews
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+                {/* GUEST FAVORITE REVIEWS SECTION */}
+                {hotelId && <HotelReviews hotelId={hotelId} />}
+                
+            </div>
+            
+            {/* 1. Room Details Modal Render */}
+            {selectedRoom && (
+                <RoomDetailsModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    roomName={selectedRoom.room_type || 'Room Details'}
+                    roomImages={hotelImages} 
+                />
+            )}
+            
+            {/* 2. Availability Check Modal Render */}
+            {roomForCheck && (
+                <AvailabilityCheckModal
+                    isOpen={isAvailabilityCheckOpen}
+                    onClose={handleCloseAvailabilityCheck}
+                    roomData={roomForCheck}
+                    searchParams={searchParamData}
+                    onProceed={handleProceedToPayment}
+                />
+            )}
+        </div>
+    );
 }

@@ -1,5 +1,6 @@
 "use client"
 
+
 import { useState } from "react"
 import { Calendar, MapPin, Users, Search } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -64,7 +65,7 @@ export default function JourneyPlanner() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">PLAN YOUR JOURNEY</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">PLAN YOUR JOURNEY 2.0</h1>
           <p className="text-gray-600 text-lg">Select your travel dates and destination to find the perfect getaway</p>
         </div>
 

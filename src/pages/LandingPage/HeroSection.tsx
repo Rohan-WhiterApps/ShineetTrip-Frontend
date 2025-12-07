@@ -168,7 +168,7 @@ export default function HeroSection() {
       <LoginModal isOpen={showLoginPopup} onClose={() => setShowLoginPopup(false)} />
 
       {/* HERO SECTION */}
-      <div className="relative w-full h-[100vh] overflow-hidden">
+      <div className="relative w-full h-screen overflow-hidden">
         {/* Background Image */}
         <img 
           src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80" 
