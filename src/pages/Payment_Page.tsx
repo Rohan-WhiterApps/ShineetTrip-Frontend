@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, X, Phone, Mail, Award, Shield, Clock, Edit2, Loader2 } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom'; 
+import { useSearchParams, useNavigate } from 'react-router-dom'; // ✅ FIX 1: useNavigate import kiya
+import BookingSuccessCard from '../components/ui/BookingSuccessCard'; // ✅ NEW: Success Card Import
 
 // Define global Razorpay object for TypeScript compiler
 declare global {
@@ -35,7 +36,11 @@ const BookingPage: React.FC = () => {
     
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentMessage, setPaymentMessage] = useState('');
+    const [isBookingSuccessful, setIsBookingSuccessful] = useState(false); // ✅ NEW State for success card
+    const [successOrderId, setSuccessOrderId] = useState(''); // Store the final Order ID
+    
 
+    const navigate = useNavigate(); // ✅ FIX 2: useNavigate hook use kiya
     const [searchParams] = useSearchParams();
     const retailPriceStr = searchParams.get('retailPrice') || '0';
     const taxPriceStr = searchParams.get('taxPrice') || '0';
@@ -53,7 +58,7 @@ const BookingPage: React.FC = () => {
     const customerIdStr = localStorage.getItem('shineetrip_db_customer_id') || '1'; // Using db customer ID
     const customerId = parseInt(customerIdStr) || 1; 
 
-    // ✅ FINAL CONFIRMED PUBLIC KEY (For Frontend Popup)
+    // ✅ FINAL CONFIRMED PUBLIC KEY
     const RAZORPAY_KEY = 'rzp_test_Ri1Lg8tbqZnUaT';
 
     // API URLS - Confirmed by your Postman testing
@@ -133,10 +138,6 @@ const BookingPage: React.FC = () => {
             const orderData = JSON.parse(responseText);
             const razorpayOrderId = orderData.razorpayOrderId;
             
-            // DEBUG STEP: Log the generated Order ID
-            console.log("--- RZP ORDER ID GENERATED ---");
-            console.log("ORDER ID:", razorpayOrderId);
-            console.log("------------------------------");
             setPaymentMessage(`Order ID ${razorpayOrderId} generated. Opening payment gateway...`);
             
             // Step 2: Initialize Razorpay Checkout
@@ -145,7 +146,7 @@ const BookingPage: React.FC = () => {
             }
 
             const options = {
-                key: RAZORPAY_KEY, // ✅ FIX: Using the correct confirmed Key ID here
+                key: RAZORPAY_KEY, 
                 amount: amountInPaise, 
                 currency: "INR",
                 name: "Shinee Trip Booking",
@@ -185,27 +186,39 @@ const BookingPage: React.FC = () => {
     const verifyPayment = async (razorpayResponse: any, orderId: string) => {
         setIsProcessing(true); 
         try {
+            // ✅ CRITICAL FIX: Convert snake_case response fields to camelCase for the backend API
             const verificationPayload = {
-                razorpay_order_id: orderId,
-                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-                razorpay_signature: razorpayResponse.razorpay_signature,
+                razorpayOrderId: orderId, // Already camelCase from 'orderId' variable
+                razorpayPaymentId: razorpayResponse.razorpay_payment_id, // FIX: Change to camelCase
+                razorpaySignature: razorpayResponse.razorpay_signature, // FIX: Change to camelCase
             };
             
+            console.log("Verification Payload Sent:", verificationPayload); // DEBUG
+
             const verifyResponse = await fetch(VERIFY_URL, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                headers: { 
+                    'Authorization': `Bearer ${token}`, 
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify(verificationPayload),
             });
             
+            const verificationText = await verifyResponse.text(); // Get full response text for debug
+
             if (!verifyResponse.ok) {
-                throw new Error('Payment verification failed on server.');
+                // Log the full server response for debugging by backend team
+                console.error("Verification Server Response (400/500):", verificationText); // DEBUG
+                throw new Error(`Payment verification failed on server. Status: ${verifyResponse.status}. Details: ${verificationText}`); // Include details in error message
             }
 
-            setPaymentMessage('Booking Successful! Your payment has been verified.');
-            // navigate('/booking/success'); 
+            // ✅ SUCCESS STATE CHANGE (Stop automatic navigation)
+            setPaymentMessage('Booking successful! Payment successfully verified.');
+            setSuccessOrderId(orderId); // Store the final Order ID
+            setIsBookingSuccessful(true); // Open the success card
 
         } catch (error) {
-            setPaymentMessage('Payment verification failed. Please contact support.');
+            setPaymentMessage('Payment verification failed. Please contact support. Error: ' + (error instanceof Error ? error.message : 'Unknown verification error.'));
             console.error("Verification Error:", error);
         } finally {
             setIsProcessing(false);
@@ -241,6 +254,11 @@ const BookingPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-100 pt-[116px]">
+            {/* Render Success Card if successful */}
+            {isBookingSuccessful && successOrderId && (
+                <BookingSuccessCard roomName={roomName} orderId={successOrderId} />
+            )}
+
             {/* Header / Progress Steps (Unchanged) */}
             <div className="bg-white py-6 px-6 mb-6">
                 <div className="max-w-md mx-auto flex items-center justify-center gap-4">
@@ -308,7 +326,7 @@ const BookingPage: React.FC = () => {
                                         name="title"
                                         value={formData.title}
                                         onChange={handleInputChange}
-                                        className="px-4 py-2.5 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-500"
+                                        className="px-4 py-2.5 border border-gray-300 rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-500"
                                             disabled={isProcessing}
                                     >
                                         <option value="">Select Title*</option>
@@ -370,14 +388,14 @@ const BookingPage: React.FC = () => {
                                         className="mt-1 w-4 h-4 accent-yellow-600"
                                         disabled={isProcessing}
                                     />
-                                    <label className="text-sm text-gray-700">
+                                    <label className="text-sm text-gray-709">
                                         I agree to the <a href="#" className="text-blue-600 hover:underline">privacy policy</a>
                                     </label>
                                 </div>
                                 
                                 {/* Payment Message/Error Display */}
                                 {paymentMessage && (
-                                    <div className={`p-3 rounded-lg text-sm font-medium ${paymentMessage.includes('Success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    <div className={`p-3 rounded-lg text-sm font-medium ${paymentMessage.includes('Success') || paymentMessage.includes('successful') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                         {paymentMessage}
                                     </div>
                                 )}
