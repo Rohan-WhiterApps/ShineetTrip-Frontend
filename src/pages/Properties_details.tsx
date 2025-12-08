@@ -62,11 +62,11 @@ export default function RoomBookingPage() {
     const handleOpenModal = (roomData: any) => { setSelectedRoom(roomData); setIsModalOpen(true); };
     const handleCloseModal = () => { setIsModalOpen(false); setSelectedRoom(null); };
     
-    // NOTE: handleCloseAvailabilityCheck ab sirf ek placeholder hai, lekin hum use rakhenge
+  
     const handleCloseAvailabilityCheck = () => { setIsAvailabilityCheckOpen(false); setRoomForCheck(null); }; 
 
 
-    // ✅ FIXED LOGIC: Yeh function ab seedha handleProceedToPayment ko call karega
+    
     const handleProceedToPayment = (roomData: any) => { 
         const roomDetails = {
             roomId: roomData.id, roomName: roomData.room_type, retailPrice: roomData.price.retail_price, 
@@ -75,11 +75,11 @@ export default function RoomBookingPage() {
         const queryString = new URLSearchParams(roomDetails).toString();
         navigate(`/booking?${queryString}`);
         
-        // Agar pehle modal open tha to use band kar de
+      
         handleCloseAvailabilityCheck(); 
     };
     
-    // ✅ NEW handleBookNow: Ab yeh seedha payment logic ko call karega
+  
     const handleBookNow = (roomData: any) => { 
         handleProceedToPayment(roomData);
     };
@@ -190,8 +190,8 @@ export default function RoomBookingPage() {
     return (
         <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
             {/* FULL SEARCH BAR & PROGRESS STEPS UI */}
-            <div className="bg-white border-b border-gray-200 sticky top-[116px] z-10 shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="bg-white border-b border-gray-200 pt-6 sticky top-[90px] z-20 shadow-sm">
+                <div className="max-w-7xl mx-auto px-6 py-3">
                     {/* Search Fields (Now Editable) */}
                     <div className="flex items-center justify-center gap-0 mb-4">
                         {/* Location Field */}
@@ -290,7 +290,7 @@ export default function RoomBookingPage() {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="max-w-7xl mx-auto px-6 pb-8">
                 {/* Hotel Header */}
                 <div className="mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">{hotelData?.name}</h1> 
@@ -328,11 +328,10 @@ export default function RoomBookingPage() {
             {/* 1. Room Details Modal Render */}
             {selectedRoom && (
                 <RoomDetailsModal
-                    isOpen={isModalOpen}
-                    onClose={handleCloseModal}
-                    roomName={selectedRoom.room_type || 'Room Details'}
-                    roomImages={hotelImages} 
-                />
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    roomName={selectedRoom.room_type || 'Room Details'}
+                    roomImages={hotelImages} roomData={undefined}                />
             )}
             
             {/* 2. Availability Check Modal Render */}
