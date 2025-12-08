@@ -145,7 +145,7 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick }: RoomCa
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             
                             {/* Option 1: Highlighted (Active Plan) */}
-                            <div className="flex flex-col justify-between border border-[#D2A256] bg-[#FFFBF4] rounded-xl p-4 relative h-full min-h-[120px]">
+                            <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] rounded-xl p-4 relative h-full min-h-[120px]">
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="font-bold text-gray-900">Room Only</div>
@@ -168,7 +168,7 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick }: RoomCa
                             </div>
 
                             {/* Option 2: Standard Plan (Visual Placeholder) */}
-                            <div className="flex flex-col justify-between border border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
+                            <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="font-bold text-gray-900">Room Only</div>
@@ -184,14 +184,14 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick }: RoomCa
                                 </div>
                                 <button 
                                     onClick={(e) => handleBookNowClick(e, room)}
-                                    className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800"
+                                    className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
                                 >
                                     BOOK NOW
                                 </button>
                             </div>
 
                              {/* Option 3: Standard Plan (Visual Placeholder) */}
-                             <div className="hidden md:flex flex-col justify-between border border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
+                             <div className="hidden md:flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="font-bold text-gray-900">Boom only</div>
@@ -207,7 +207,7 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick }: RoomCa
                                 </div>
                                 <button 
                                     onClick={(e) => handleBookNowClick(e, room)}
-                                    className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800"
+                                    className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
                                 >
                                     BOOK NOW
                                 </button>

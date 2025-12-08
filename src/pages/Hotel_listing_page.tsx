@@ -2,557 +2,613 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
-  Star,
-  Check,
-  MapPin,
-  Users,
-  Calendar,
-  Search,
-  SlidersHorizontal,
-  Wifi,
+  Star,
+  Check,
+  MapPin,
+  Users,
+  Calendar,
+  Search,
+  SlidersHorizontal,
+  Wifi,
 } from "lucide-react";
 
 interface Hotel {
-  id: string;
-  name: string;
-  location: string;
-  rating: number;
-  reviews: number;
-  images: string[];
-  amenities: string[];
-  price: number;
-  originalPrice: number;
-  taxes: number;
-  description: string;
+  id: string;
+  name: string;
+  location: string;
+  rating: number;
+  reviews: number;
+  images: string[];
+  amenities: string[];
+  price: number;
+  originalPrice: number;
+  taxes: number;
+  description: string;
 }
 
 // Helper to format date to YYYY-MM-DD for input value/default
 const getTodayDateString = () => {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 const HotelListingPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // ✅ Editable States
-  const [currentLocation, setCurrentLocation] = useState(
-    searchParams.get("location") || "Manali"
-  );
-  const [currentCheckIn, setCurrentCheckIn] = useState(
-    searchParams.get("checkIn") || getTodayDateString()
-  );
-  const [currentCheckOut, setCurrentCheckOut] = useState(
-    searchParams.get("checkOut") || getTodayDateString()
-  );
-  const [currentAdults, setCurrentAdults] = useState(
-    searchParams.get("adults") || "2"
-  );
-  const [currentChildren, setCurrentChildren] = useState(
-    searchParams.get("children") || "0"
-  );
+  // ✅ Editable States
+  // FIX 1: Default location ko empty string se initialize kiya
+  const [currentLocation, setCurrentLocation] = useState(
+    searchParams.get("location") || "" 
+  );
+  const [currentCheckIn, setCurrentCheckIn] = useState(
+    searchParams.get("checkIn") || getTodayDateString()
+  );
+  const [currentCheckOut, setCurrentCheckOut] = useState(
+    searchParams.get("checkOut") || getTodayDateString()
+  );
+  const [currentAdults, setCurrentAdults] = useState(
+    searchParams.get("adults") || "2"
+  );
+  const [currentChildren, setCurrentChildren] = useState(
+    searchParams.get("children") || "0"
+  );
 
-  const [sortBy, setSortBy] = useState("Most Popular");
-  const [selectedImages, setSelectedImages] = useState<{ [key: number]: number }>({});
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState("Most Popular");
+  const [selectedImages, setSelectedImages] = useState<{ [key: number]: number }>({});
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // API Fetch parameters
-  const location = searchParams.get("location") || "Manali";
-  const checkIn = searchParams.get("checkIn") || "";
-  const checkOut = searchParams.get("checkOut") || "";
-  const adults = searchParams.get("adults") || "2";
-  const children = searchParams.get("children") || "0";
+  // API Fetch parameters
+  // FIX 1: Location default "Manali" removed from URL read
+  const location = searchParams.get("location") || "";
+  const checkIn = searchParams.get("checkIn") || "";
+  const checkOut = searchParams.get("checkOut") || "";
+  const adults = searchParams.get("adults") || "2";
+  const children = searchParams.get("children") || "0";
 
-  const sortOptions = [
-    "Most Popular",
-    "Price- Low to high",
-    "Price- High to low",
-    "Best Rated",
-    "Lowest Price & Best Rated",
-  ];
+  const sortOptions = [
+    "Most Popular",
+    "Price- Low to high",
+    "Price- High to low",
+    "Best Rated",
+    "Lowest Price & Best Rated",
+  ];
 
-  // ✅ Function to handle navigation with new search parameters
-  const handleSearch = () => {
-    setFetchError(null);
+  // ✅ Function to handle navigation with new search parameters
+  const handleSearch = () => {
+    setFetchError(null);
 
-    const today = getTodayDateString();
-    if (currentCheckIn < today) {
-      alert("Check-in date cannot be in the past. Please select today or a future date.");
-      return;
-    }
+    const today = getTodayDateString();
+    if (currentCheckIn < today) {
+      alert("Check-in date cannot be in the past. Please select today or a future date.");
+      return;
+    }
 
-    const newSearchParams = new URLSearchParams({
-      location: currentLocation,
-      checkIn: currentCheckIn,
-      checkOut: currentCheckOut,
-      adults: currentAdults,
-      children: currentChildren,
+    const newSearchParams = new URLSearchParams({
+      location: currentLocation,
+      checkIn: currentCheckIn,
+      checkOut: currentCheckOut,
+      adults: currentAdults,
+      children: currentChildren,
+    }).toString();
+
+    navigate(`/hotellists?${newSearchParams}`);
+  };
+
+  // ✅ Fetching logic
+  const fetchHotels = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+
+    try {
+      const token = localStorage.getItem("shineetrip_token");
+      if (!token) {
+        console.warn("No token found — please log in first.");
+        setLoading(false);
+        setHasSearched(true);
+        return;
+      }
+
+      const queryParams = new URLSearchParams();
+      // ✅ FIX 2: Only append location if it has a value, allowing empty search for all hotels
+      if (location) queryParams.append("location", location); 
+      if (checkIn) queryParams.append("checkIn", checkIn);
+      if (checkOut) queryParams.append("checkOut", checkOut);
+      if (adults) queryParams.append("adults", adults);
+      if (children) queryParams.append("children", children);
+
+      const apiUrl = `http://46.62.160.188:3000/search/hotels?${queryParams.toString()}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          setFetchError(errorData.message || `Failed to fetch hotels: ${response.status}`);
+        } catch {
+          setFetchError(`Failed to fetch hotels: ${response.status}`);
+        }
+        throw new Error(`Failed to fetch hotels: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      // Transform API data to match our interface
+      const hotelList = (Array.isArray(data) ? data : [])
+        .map((item: any) => {
+          const hotel = item.property;
+          const roomDetails = item.roomDetails;
+
+          if (!hotel) return null;
+
+          return {
+            id: String(hotel.id),
+            name: hotel.name || "",
+            location: `${hotel.city || ""}, ${hotel.country || ""}`.trim(),
+            rating: parseFloat(hotel.rating) || 4.2,
+            reviews: 6624,
+            images:
+              hotel.images
+                ?.map((img: any) => img.image)
+                .filter((url: string | null) => url && typeof url === "string") || [],
+            amenities: hotel.selectedFeatures?.map((f: any) => f.name) || ["Gym", "Restaurant"],
+            price: parseFloat(roomDetails?.retailPrice || 8999),
+            originalPrice: parseFloat(roomDetails?.totalPricePerNight || 8999),
+            taxes: parseFloat(roomDetails?.taxAmount || 144),
+            description: hotel.short_description || hotel.description || "",
+          };
+        })
+        .filter((item): item is Hotel => item !== null);
+
+      setHotels(hotelList);
+
+      // Initialize selected images
+      const initialImages: { [key: number]: number } = {};
+      hotelList.forEach((_: any, index: number) => {
+        initialImages[index] = 0;
+      });
+      setSelectedImages(initialImages);
+    } catch (error) {
+      console.error("Error fetching hotels:", error);
+    } finally {
+      setLoading(false);
+      setHasSearched(true);
+    }
+  }, [location, checkIn, checkOut, adults, children, navigate]);
+
+  // API fetch triggers when URL params change
+  useEffect(() => {
+    fetchHotels();
+  }, [fetchHotels]);
+
+  // Sync internal states when URL changes
+  useEffect(() => {
+    // ✅ FIX 3: Removed hardcoded "Manali" default from URL sync
+    setCurrentLocation(searchParams.get("location") || "");
+    setCurrentCheckIn(searchParams.get("checkIn") || getTodayDateString());
+    setCurrentCheckOut(searchParams.get("checkOut") || getTodayDateString());
+    setCurrentAdults(searchParams.get("adults") || "2");
+    setCurrentChildren(searchParams.get("children") || "0");
+  }, [searchParams]);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const handleImageSelect = (hotelIndex: number, imageIndex: number) => {
+    setSelectedImages((prev) => ({
+      ...prev,
+      [hotelIndex]: imageIndex,
+    }));
+  };
+
+  const handleHotelClick = (hotelId: string) => {
+    const currentSearchParams = searchParams.toString();
+    navigate(`/room-booking/${hotelId}?${currentSearchParams}`);
+  };
+  
+  // ===============================================
+  // START NEW LOGIC BLOCK FOR VIEW ALL FIX
+  // ===============================================
+  
+  // Helper to check if location is currently empty or not
+  const isLocationEmpty = currentLocation.trim() === "";
+  
+  // Function to navigate to View All Hotels (No location filter)
+  const handleViewAllHotels = () => {
+    // Server ko satisfy karne ke liye safe dates bhejte hain
+    const safeCheckIn = getTodayDateString(); 
+    const safeCheckOut = getTodayDateString(); 
+
+    const searchQuery = new URLSearchParams({
+        location: '', 
+        checkIn: safeCheckIn,
+        checkOut: safeCheckOut,
+        adults: currentAdults,
+        children: currentChildren,
     }).toString();
-
-    navigate(`/hotellists?${newSearchParams}`);
+    
+    // Navigate to the listing page with safe defaults
+    navigate(`/hotellists?${searchQuery}`);
   };
 
-  // ✅ Fetching logic
-  const fetchHotels = useCallback(async () => {
-    setLoading(true);
-    setFetchError(null);
 
-    try {
-      const token = localStorage.getItem("shineetrip_token");
-      if (!token) {
-        console.warn("No token found — please log in first.");
-        setLoading(false);
-        setHasSearched(true);
+  const handleSearchClick = () => {
+    const token = localStorage.getItem("shineetrip_token");
+    if (!token) {
+        alert("Please log in to search for hotels.");
         return;
-      }
-
-      const queryParams = new URLSearchParams();
-      if (location) queryParams.append("location", location);
-      if (checkIn) queryParams.append("checkIn", checkIn);
-      if (checkOut) queryParams.append("checkOut", checkOut);
-      if (adults) queryParams.append("adults", adults);
-      if (children) queryParams.append("children", children);
-
-      const apiUrl = `http://46.62.160.188:3000/search/hotels?${queryParams.toString()}`;
-
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        try {
-          const errorData = JSON.parse(errorText);
-          setFetchError(errorData.message || `Failed to fetch hotels: ${response.status}`);
-        } catch {
-          setFetchError(`Failed to fetch hotels: ${response.status}`);
-        }
-        throw new Error(`Failed to fetch hotels: ${response.status} ${errorText}`);
-      }
-
-      const data = await response.json();
-
-      // Transform API data to match our interface
-      const hotelList = (Array.isArray(data) ? data : [])
-        .map((item: any) => {
-          const hotel = item.property;
-          const roomDetails = item.roomDetails;
-
-          if (!hotel) return null;
-
-          return {
-            id: String(hotel.id),
-            name: hotel.name || "",
-            location: `${hotel.city || ""}, ${hotel.country || ""}`.trim(),
-            rating: parseFloat(hotel.rating) || 4.2,
-            reviews: 6624,
-            images:
-              hotel.images
-                ?.map((img: any) => img.image)
-                .filter((url: string | null) => url && typeof url === "string") || [],
-            amenities: hotel.selectedFeatures?.map((f: any) => f.name) || ["Gym", "Restaurant"],
-            price: parseFloat(roomDetails?.retailPrice || 8999),
-            originalPrice: parseFloat(roomDetails?.totalPricePerNight || 8999),
-            taxes: parseFloat(roomDetails?.taxAmount || 144),
-            description: hotel.short_description || hotel.description || "",
-          };
-        })
-        .filter((item): item is Hotel => item !== null);
-
-      setHotels(hotelList);
-
-      // Initialize selected images
-      const initialImages: { [key: number]: number } = {};
-      hotelList.forEach((_: any, index: number) => {
-        initialImages[index] = 0;
-      });
-      setSelectedImages(initialImages);
-    } catch (error) {
-      console.error("Error fetching hotels:", error);
-    } finally {
-      setLoading(false);
-      setHasSearched(true);
     }
-  }, [location, checkIn, checkOut, adults, children]);
 
-  // API fetch triggers when URL params change
-  useEffect(() => {
-    fetchHotels();
-  }, [fetchHotels]);
-
-  // Sync internal states when URL changes
-  useEffect(() => {
-    setCurrentLocation(searchParams.get("location") || "Manali");
-    setCurrentCheckIn(searchParams.get("checkIn") || getTodayDateString());
-    setCurrentCheckOut(searchParams.get("checkOut") || getTodayDateString());
-    setCurrentAdults(searchParams.get("adults") || "2");
-    setCurrentChildren(searchParams.get("children") || "0");
-  }, [searchParams]);
-
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  const handleImageSelect = (hotelIndex: number, imageIndex: number) => {
-    setSelectedImages((prev) => ({
-      ...prev,
-      [hotelIndex]: imageIndex,
-    }));
+    // Agar location khali hai, toh View All logic chalao
+    if (isLocationEmpty) {
+        handleViewAllHotels();
+    } else {
+        // Agar location filled hai, toh detailed search chalao (handleSearch)
+        handleSearch();
+    }
   };
+  // ===============================================
+  // END NEW LOGIC BLOCK
+  // ===============================================
 
-  const handleHotelClick = (hotelId: string) => {
-    const currentSearchParams = searchParams.toString();
-    navigate(`/room-booking/${hotelId}?${currentSearchParams}`);
-  };
 
-  const SearchBar = (
-    <div className="bg-white border-b border-gray-200 sticky top-[116px] z-20 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        {/* Search Fields - EXACT FIGMA STYLE */}
-        <div className="flex items-center justify-center gap-0 mb-4 rounded-lg overflow-hidden border border-gray-300 bg-gray-200">
-          {/* Location Field */}
-          <div className="flex-1 max-w-[250px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
-              CITY, AREA OR PROPERTY
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#D2A256]" />
-              <input
-                type="text"
-                value={currentLocation}
-                onChange={(e) => setCurrentLocation(e.target.value)}
-                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
-                placeholder="Enter location"
-              />
-            </div>
-          </div>
+  const SearchBar = (
+    <div className="bg-white border-b border-gray-200 pt-6 sticky top-[90px] z-20 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        {/* Search Fields - EXACT FIGMA STYLE */}
+        <div className="flex items-center justify-center gap-0 mb-4 rounded-lg overflow-hidden border border-gray-300 bg-gray-200">
+          {/* Location Field */}
+          <div className="flex-1 max-w-[250px] bg-gray-200 px-4 py-3 border-r border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
+              CITY, AREA OR PROPERTY
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#D2A256]" />
+              <input
+                type="text"
+                value={currentLocation}
+                onChange={(e) => setCurrentLocation(e.target.value)}
+                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
+                placeholder="Enter location"
+              />
+            </div>
+          </div>
 
-          {/* Check-in Field */}
-          <div className="flex-1 max-w-[200px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-IN</div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#D2A256]" />
-              <input
-                type="date"
-                value={currentCheckIn}
-                onChange={(e) => setCurrentCheckIn(e.target.value)}
-                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Check-in Field */}
+          <div className="flex-1 max-w-[200px] bg-gray-200 px-4 py-3 border-r border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-IN</div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#D2A256]" />
+              <input
+                type="date"
+                value={currentCheckIn}
+                onChange={(e) => setCurrentCheckIn(e.target.value)}
+                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
+              />
+            </div>
+          </div>
 
-          {/* Check-out Field */}
-          <div className="flex-1 max-w-[200px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-OUT</div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#D2A256]" />
-              <input
-                type="date"
-                value={currentCheckOut}
-                onChange={(e) => setCurrentCheckOut(e.target.value)}
-                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Check-out Field */}
+          <div className="flex-1 max-w-[200px] bg-gray-200 px-4 py-3 border-r border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-OUT</div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#D2A256]" />
+              <input
+                type="date"
+                value={currentCheckOut}
+                onChange={(e) => setCurrentCheckOut(e.target.value)}
+                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
+              />
+            </div>
+          </div>
 
-          {/* Room & Guest Field */}
-          <div className="flex-1 max-w-[250px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">ROOM & GUEST</div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#D2A256]" />
-              <span className="text-base font-medium text-gray-900">
-                1 Room, {currentAdults} Adult{parseInt(currentAdults) > 1 ? "s" : ""}
-              </span>
-            </div>
-          </div>
+          {/* Room & Guest Field */}
+          <div className="flex-1 max-w-[250px] bg-gray-200 px-4 py-3 border-r border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">ROOM & GUEST</div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#D2A256]" />
+              <span className="text-base font-medium text-gray-900">
+                1 Room, {currentAdults} Adult{parseInt(currentAdults) > 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
 
-          {/* Search Button - Yellow/Gold color as in Figma */}
-          <div className="flex-shrink-0 p-2">
-            <button
-              onClick={handleSearch}
-              className="bg-[#D2A256] text-white p-3 rounded-full hover:bg-[#c2934b] transition-colors shadow-lg"
-            >
-              <Search className="w-5 h-5" />
+          {/* Search Button - Yellow/Gold color as in Figma */}
+          <div className="flex-shrink-0 p-2">
+            <button
+              onClick={handleSearchClick} // ✅ NEW HANDLER
+              className="bg-[#D2A256] text-white p-3 rounded-full hover:bg-[#c2934b] transition-colors shadow-lg"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Sort Options */}
+        <div className="flex items-center gap-4 justify-start flex-wrap mt-2">
+          <div className="flex items-center gap-2 text-gray-900 font-semibold text-sm">
+            <SlidersHorizontal className="w-4 h-4 text-[#D2A256]" />
+            <span>Sort By:</span>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            {sortOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setSortBy(option)}
+                className={`px-3 py-1.5 rounded-full text-xs transition-all font-medium border ${
+                  sortBy === option
+                    ? "bg-[#D2A256] text-white border-[#D2A256]"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Temporary Button for Figma Style */}
+        <div className="flex justify-center mt-3">
+             <button onClick={handleSearchClick} className="bg-black text-white px-8 py-2 rounded-lg font-semibold hover:bg-gray-800">
+                {currentLocation ? 'Search' : 'View All Hotels'}
             </button>
-          </div>
         </div>
+      </div>
+    </div>
+  );
 
-        {/* Sort Options */}
-        <div className="flex items-center gap-4 justify-start flex-wrap mt-2">
-          <div className="flex items-center gap-2 text-gray-900 font-semibold text-sm">
-            <SlidersHorizontal className="w-4 h-4 text-[#D2A256]" />
-            <span>Sort By:</span>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            {sortOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setSortBy(option)}
-                className={`px-3 py-1.5 rounded-full text-xs transition-all font-medium border ${
-                  sortBy === option
-                    ? "bg-[#D2A256] text-white border-[#D2A256]"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // --- Rendering UI ---
 
-  // --- Rendering UI ---
+  // Handle Loading State
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Searching for properties...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Handle Loading State
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Searching for properties...</p>
-        </div>
-      </div>
-    );
-  }
+  // Handle No Results State / Error State
+  if (hotels.length === 0 && hasSearched) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
+        {SearchBar}
+        <div className="flex items-center justify-center pt-24 pb-24">
+          <div className="text-center p-12 rounded-lg shadow-md bg-white">
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">
+              {fetchError ? "Error Fetching Results" : "No Properties Found"}
+            </h2>
+            <p className="text-red-600 mb-3">
+              {fetchError || "Try adjusting your filters, location, or dates."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Handle No Results State / Error State
-  if (hotels.length === 0 && hasSearched) {
-    return (
-      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
-        {SearchBar}
-        <div className="flex items-center justify-center pt-24 pb-24">
-          <div className="text-center p-12 rounded-lg shadow-md bg-white">
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">
-              {fetchError ? "Error Fetching Results" : "No Properties Found"}
-            </h2>
-            <p className="text-red-600 mb-3">
-              {fetchError || "Try adjusting your filters, location, or dates."}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  return (
+    <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
+      {SearchBar}
 
-  return (
-    <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
-      {SearchBar}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Results Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Showing Properties in {location || "All Destinations"}
+          </h1>
+          <span className="text-sm text-gray-600">6624 Ratings found</span>
+        </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Results Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Showing Properties in {location || "Manali"}
-          </h1>
-          <span className="text-sm text-gray-600">6624 Ratings found</span>
-        </div>
+        {/* Hotel Cards - EXACT FIGMA LAYOUT */}
+        <div className="space-y-6">
+          {hotels.map((hotel, index) => {
+            const currentImageIndex = selectedImages[index] || 0;
+            const discountAmount = hotel.originalPrice - hotel.price;
 
-        {/* Hotel Cards - EXACT FIGMA LAYOUT */}
-        <div className="space-y-6">
-          {hotels.map((hotel, index) => {
-            const currentImageIndex = selectedImages[index] || 0;
-            const discountAmount = hotel.originalPrice - hotel.price;
+            return (
+              <div
+                key={hotel.id}
+                onClick={() => handleHotelClick(hotel.id)}
+                className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+              >
+                <div className="flex flex-col md:flex-row">
+                  {/* Image Section */}
+                  <div className="md:w-[380px] flex-shrink-0">
+                    <div className="relative h-[240px] md:h-full">
+                      <img
+                        src={hotel.images[currentImageIndex] || "https://placehold.co/550x320/cccccc/333333?text=No+Image"}
+                        alt={hotel.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-4 left-4 flex gap-2">
+                        {hotel.images.slice(0, 4).map((img, imgIndex) => (
+                          <button
+                            key={imgIndex}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleImageSelect(index, imgIndex);
+                            }}
+                            className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                              currentImageIndex === imgIndex
+                                ? "border-white scale-105"
+                                : "border-transparent opacity-70 hover:opacity-100"
+                            }`}
+                          >
+                            {imgIndex < 3 ? (
+                              <img
+                                src={img}
+                                alt={`Thumbnail ${imgIndex + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-800 bg-opacity-70 flex items-center justify-center text-white text-xs font-semibold">
+                                View All
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-            return (
-              <div
-                key={hotel.id}
-                onClick={() => handleHotelClick(hotel.id)}
-                className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-              >
-                <div className="flex flex-col md:flex-row">
-                  {/* Image Section */}
-                  <div className="md:w-[380px] flex-shrink-0">
-                    <div className="relative h-[240px] md:h-full">
-                      <img
-                        src={hotel.images[currentImageIndex] || "https://placehold.co/550x320/cccccc/333333?text=Hotel+Image"}
-                        alt={hotel.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-4 left-4 flex gap-2">
-                        {hotel.images.slice(0, 4).map((img, imgIndex) => (
-                          <button
-                            key={imgIndex}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleImageSelect(index, imgIndex);
-                            }}
-                            className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
-                              currentImageIndex === imgIndex
-                                ? "border-white scale-105"
-                                : "border-transparent opacity-70 hover:opacity-100"
-                            }`}
-                          >
-                            {imgIndex < 3 ? (
-                              <img
-                                src={img}
-                                alt={`Thumbnail ${imgIndex + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-800 bg-opacity-70 flex items-center justify-center text-white text-xs font-semibold">
-                                View All
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  {/* Content Section - EXACT FIGMA STRUCTURE */}
+                  <div className="flex-1 p-6">
+                    <div className="flex flex-col lg:flex-row h-full gap-6">
+                      {/* Left Column: Hotel Details */}
+                      <div className="flex-1">
+                        {/* Hotel Name and Location */}
+                        <h2 className="text-xl font-bold text-gray-900 mb-1">
+                          {hotel.name}
+                        </h2>
+                        <div className="flex items-center gap-2 text-gray-600 mb-4">
+                          <MapPin className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm">Mahipalpur | 1.5Km drive to Mall Road</span>
+                        </div>
 
-                  {/* Content Section - EXACT FIGMA STRUCTURE */}
-                  <div className="flex-1 p-6">
-                    <div className="flex flex-col lg:flex-row h-full gap-6">
-                      {/* Left Column: Hotel Details */}
-                      <div className="flex-1">
-                        {/* Hotel Name and Location */}
-                        <h2 className="text-xl font-bold text-gray-900 mb-1">
-                          {hotel.name}
-                        </h2>
-                        <div className="flex items-center gap-2 text-gray-600 mb-4">
-                          <MapPin className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm">Mahipalpur | 1.5Km drive to Mall Road</span>
-                        </div>
+                        {/* Amenities - Simple checkboxes like Figma */}
+                        <div className="flex flex-wrap gap-3 mb-6">
+                          {hotel.amenities.slice(0, 3).map((amenity, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200"
+                            >
+                              <div className="w-3 h-3 border border-gray-400 rounded-sm flex items-center justify-center">
+                                {amenity === "Gym" || amenity === "Restaurant" ? (
+                                  <Check className="w-2 h-2 text-gray-600" />
+                                ) : null}
+                              </div>
+                              <span className="text-sm text-gray-700">{amenity}</span>
+                            </div>
+                          ))}
+                        </div>
 
-                        {/* Amenities - Simple checkboxes like Figma */}
-                        <div className="flex flex-wrap gap-3 mb-6">
-                          {hotel.amenities.slice(0, 3).map((amenity, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200"
-                            >
-                              <div className="w-3 h-3 border border-gray-400 rounded-sm flex items-center justify-center">
-                                {amenity === "Gym" || amenity === "Restaurant" ? (
-                                  <Check className="w-2 h-2 text-gray-600" />
-                                ) : null}
-                              </div>
-                              <span className="text-sm text-gray-700">{amenity}</span>
-                            </div>
-                          ))}
-                        </div>
+                        {/* Features List - EXACT FIGMA STYLE */}
+                        <div className="space-y-3">
+                          {/* Free WiFi */}
+                          <div className="flex items-center gap-3">
+                            <Wifi className="w-5 h-5 text-gray-700" />
+                            <span className="text-gray-700">Free WiFi</span>
+                          </div>
 
-                        {/* Features List - EXACT FIGMA STYLE */}
-                        <div className="space-y-3">
-                          {/* Free WiFi */}
-                          <div className="flex items-center gap-3">
-                            <Wifi className="w-5 h-5 text-gray-700" />
-                            <span className="text-gray-700">Free WiFi</span>
-                          </div>
+                          {/* Couple Friendly */}
+                          <div className="flex items-center gap-3">
+                            <Users className="w-5 h-5 text-gray-700" />
+                            <span className="text-gray-700">Couple Friendly</span>
+                          </div>
 
-                          {/* Couple Friendly */}
-                          <div className="flex items-center gap-3">
-                            <Users className="w-5 h-5 text-gray-700" />
-                            <span className="text-gray-700">Couple Friendly</span>
-                          </div>
+                          {/* Free Cancellations */}
+                          <div className="flex items-center gap-3">
+                            <Check className="w-5 h-5 text-green-600" />
+                            <span className="text-gray-700 font-medium">Free Cancellations</span>
+                          </div>
 
-                          {/* Free Cancellations */}
-                          <div className="flex items-center gap-3">
-                            <Check className="w-5 h-5 text-green-600" />
-                            <span className="text-gray-700 font-medium">Free Cancellations</span>
-                          </div>
+                          {/* Additional features from API if available */}
+                          {hotel.amenities.slice(3, 6).map((amenity, idx) => (
+                            <div key={idx} className="flex items-center gap-3">
+                              <Check className="w-5 h-5 text-gray-500" />
+                              <span className="text-gray-700">{amenity}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                          {/* Additional features from API if available */}
-                          {hotel.amenities.slice(3, 6).map((amenity, idx) => (
-                            <div key={idx} className="flex items-center gap-3">
-                              <Check className="w-5 h-5 text-gray-500" />
-                              <span className="text-gray-700">{amenity}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      {/* Right Column: Price and Booking - EXACT FIGMA STYLE */}
+                      <div className="lg:w-[300px] border-l flex flex-col justify-between h-full border-gray-200 pl-6">
+                        {/* Coupon Section - RED BADGE LIKE FIGMA */}
+                        <div className="mb-4">
+                          <div className="inline-flex items-center bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
+                            <span>Discount</span>
+                            <span className="ml-1 bg-white text-red-500 px-1 rounded">₹{discountAmount}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 leading-relaxed">
+                            Pay using Canara Bank Credit Cards EMI to avail the offer with No Cost EMI
+                          </p>
+                        </div>
 
-                      {/* Right Column: Price and Booking - EXACT FIGMA STYLE */}
-                      <div className="lg:w-[300px] border-l border-gray-200 pl-6">
-                        {/* Coupon Section - RED BADGE LIKE FIGMA */}
-                        <div className="mb-4">
-                          <div className="inline-flex items-center bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
-                            <span>Discount</span>
-                            <span className="ml-1 bg-white text-red-500 px-1 rounded">₹{discountAmount}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 leading-relaxed">
-                            Pay using Canara Bank Credit Cards EMI to avail the offer with No Cost EMI
-                          </p>
-                        </div>
+                        {/* Price Section */}
+                        <div className="mt-6 mb-0">
+                          {/* Tax Info */}
+                          <div className="text-right mb-3">
+                            <span className="text-xs text-gray-500">
+                              + ₹{hotel.taxes} taxes & fees per night
+                            </span>
+                          </div>
 
-                        {/* Price Section */}
-                        <div className="mt-6">
-                          {/* Tax Info */}
-                          <div className="text-right mb-3">
-                            <span className="text-xs text-gray-500">
-                              + ₹{hotel.taxes} taxes & fees per night
-                            </span>
-                          </div>
+                          {/* Prices */}
+                          <div className="flex items-end justify-between mb-4">
+                            <div className="text-left">
+                              <div className="text-lg text-gray-400 line-through">
+                                ₹{hotel.originalPrice.toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <button className="bg-[#22C55E] hover:bg-green-600 text-white px-5 py-3 rounded-lg font-bold text-xl shadow-md transition-colors">
+                                ₹{hotel.price.toLocaleString()}
+                              </button>
+                            </div>
+                          </div>
 
-                          {/* Prices */}
-                          <div className="flex items-end justify-between mb-4">
-                            <div className="text-left">
-                              <div className="text-lg text-gray-400 line-through">
-                                ₹{hotel.originalPrice.toLocaleString()}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <button className="bg-[#22C55E] hover:bg-green-600 text-white px-5 py-3 rounded-lg font-bold text-xl shadow-md transition-colors">
-                                ₹{hotel.price.toLocaleString()}
-                              </button>
-                            </div>
-                          </div>
+                          {/* Additional Info */}
+                          <div className="text-xs text-gray-500 space-y-1 mb-4">
+                            <div className="flex items-center gap-2">
+                              <Check className="w-3 h-3 text-green-600" />
+                              <span>Book @ 0 available</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Check className="w-3 h-3 text-green-600" />
+                              <span>Breakfast available at extra cost</span>
+                            </div>
+                          </div>
 
-                          {/* Additional Info */}
-                          <div className="text-xs text-gray-500 space-y-1 mb-4">
-                            <div className="flex items-center gap-2">
-                              <Check className="w-3 h-3 text-green-600" />
-                              <span>Book @ 0 available</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Check className="w-3 h-3 text-green-600" />
-                              <span>Breakfast available at extra cost</span>
-                            </div>
-                          </div>
+                          {/* Book Now Button - BLACK BUTTON */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleHotelClick(hotel.id);
+                            }}
+                            className="w-full bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors text-sm"
+                          >
+                            Book Now
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-                          {/* Book Now Button - BLACK BUTTON */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleHotelClick(hotel.id);
-                            }}
-                            className="w-full bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors text-sm"
-                          >
-                            Book Now
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Load More Button */}
-        <div className="flex justify-center mt-10">
-          {hotels.length > 0 && (
-            <button className="bg-gray-900 text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors">
-              Load More
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+        {/* Load More Button */}
+        <div className="flex justify-center mt-10">
+          {hotels.length > 0 && (<></>
+//             <button className="bg-gray-900 text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors">
+//               Load More
+//             </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default HotelListingPage;

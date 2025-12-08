@@ -101,7 +101,7 @@ export default function ContactForm() {
           <div>
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="h-px w-12 bg-[#C9A86A]"></div>
+                <div className="h-px w-12 bg-[#C9B86A]"></div>
                 <span className="text-[#C9A86A] text-sm tracking-widest uppercase">Get in Touch</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-bold mb-2 text-[#2C3C3C]">Begin Your</h2>
@@ -169,10 +169,10 @@ export default function ContactForm() {
           {/* Right Column - Form */}
           <div className="relative">
             {/* Golden corner decorations */}
-            <div className="absolute -top-4 -right-4 w-20 h-20 border-t-4 border-r-4 border-[#C9A86A]"></div>
-            <div className="absolute -bottom-4 -left-4 w-20 h-20 border-b-4 border-l-4 border-[#C9A86A]"></div>
+            <div className="absolute -top-4 -right-1.5 w-20 h-20 border-t-4 border-r-4 border-[#C9A86A]"></div>
+            <div className="absolute bottom-0 -left-2 w-20 h-20 border-b-4 border-l-4 border-[#C9A86A]"></div>
             
-            <form onSubmit={handleSubmit} className="bg-white p-5 shadow-lg relative">
+            <form onSubmit={handleSubmit} className="bg-white px-6 py-9 shadow-lg relative">
               <div className="space-y-[30px]">
                 {/* First Name & Last Name */}
                 <div className="grid grid-cols-2 gap-4">
