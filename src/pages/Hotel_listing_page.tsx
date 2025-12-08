@@ -194,6 +194,42 @@ const HotelListingPage: React.FC = () => {
     fetchHotels();
   }, [fetchHotels]);
 
+  // --------------------------------------------------
+// Sorting Logic Effect
+// --------------------------------------------------
+useEffect(() => {
+  if (!hotels.length) return;
+
+  let sorted = [...hotels];
+
+  switch (sortBy) {
+    case "Price- Low to high":
+      sorted.sort((a, b) => a.price - b.price);
+      break;
+
+    case "Price- High to low":
+      sorted.sort((a, b) => b.price - a.price);
+      break;
+
+    case "Best Rated":
+      sorted.sort((a, b) => b.rating - a.rating);
+      break;
+
+    case "Lowest Price & Best Rated":
+      sorted.sort((a, b) => {
+        if (a.price === b.price) return b.rating - a.rating;
+        return a.price - b.price;
+      });
+      break;
+
+    default:
+      break;
+  }
+
+  setHotels(sorted);
+}, [sortBy]);
+
+
   // Sync internal states when URL changes
   useEffect(() => {
     // ✅ FIX 3: Removed hardcoded "Manali" default from URL sync
