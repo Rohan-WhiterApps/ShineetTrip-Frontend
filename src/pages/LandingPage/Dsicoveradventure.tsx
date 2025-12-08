@@ -46,7 +46,7 @@ export default function PopularDestinations() {
             headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const res = await fetch("http://46.62.160.188:3000/states?isActive=true", {
+        const res = await fetch("http://46.62.160.188:3000/home-pop-dests", {
             headers: headers 
         });
         
