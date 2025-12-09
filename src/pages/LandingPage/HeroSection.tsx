@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { LoginModal } from "../Login/Loginpage";
 
 export default function HeroSection() {
-  const [activeTab, setActiveTab] = useState("Beach Vacations");
+  const [activeTab, setActiveTab] = useState<string>("");
   const [slideIndex, setSlideIndex] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -18,6 +18,7 @@ export default function HeroSection() {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(0);
+  const [errorPopup, setErrorPopup] = useState<string>(""); // Empty string means no popup
   
   // Login Popup State
   const [showLoginPopup, setShowLoginPopup] = useState(false);
@@ -28,43 +29,17 @@ export default function HeroSection() {
   const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const tabs = ["Beach Vacations", "Weekend Getaway", "Mountains Calling", "Royal Stay", "Party Destinations", "Pilgrims Stays"];
   const searchTabs = ["Hotels", "Flights", "Trains", "Holiday Packages", "Events"];
 
-  const destinations = {
-    "Beach Vacations": [
-      { name: "Maldives", image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80" },
-      { name: "Goa", image: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&q=80" },
-      { name: "Phuket", image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&q=80" },
-      { name: "Bali", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80" },
-      { name: "Bora Bora", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80" },
-      { name: "Maui", image: "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&q=80" },
-    ],
-    "Weekend Getaway": [
-      { name: "Shimla", image: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80" },
-      { name: "Manali", image: "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=800&q=80" },
-      { name: "Nainital", image: "https://images.unsplash.com/photo-1580837119756-563d608dd119?w=800&q=80" },
-    ],
-    "Mountains Calling": [
-      { name: "Ladakh", image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" },
-      { name: "Sikkim", image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" },
-      { name: "Dharamshala", image: "https://images.unsplash.com/photo-1540979388789-6cee28a1cdc9?w=800&q=80" },
-    ],
-    "Royal Stay": [
-      { name: "Udaipur", image: "https://images.unsplash.com/photo-1595265677860-9a3143588571?w=800&q=80" },
-      { name: "Jaipur", image: "https://images.unsplash.com/photo-1477587458883-47145ed94245?w=800&q=80" },
-    ],
-    "Party Destinations": [
-      { name: "Ibiza", image: "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?w=800&q=80" },
-      { name: "Las Vegas", image: "https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=800&q=80" },
-    ],
-    "Pilgrims Stays": [
-      { name: "Varanasi", image: "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=800&q=80" },
-      { name: "Rishikesh", image: "https://images.unsplash.com/photo-1596021688605-d26b52e8d2e6?w=800&q=80" },
-    ],
-  };
+  const [categories, setCategories] = useState<any[]>([]);
 
-  const currentDestinations = destinations[activeTab as keyof typeof destinations] || [];
+
+
+  
+  const activeCategory = categories.find(cat => cat.name === activeTab) || { destinations: [] };
+  const currentDestinations = activeCategory.destinations || [];
+
+
   const cardsPerSlide = 4;
   const maxSlide = Math.ceil(currentDestinations.length / cardsPerSlide) - 1;
 
@@ -106,6 +81,40 @@ export default function HeroSection() {
     };
     fetchLocations();
   }, []);
+  
+  // Poora useEffect replace kar do (sirf yeh wala useEffect)
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("http://46.62.160.188:3000/home-cat-dests/categorized");
+      if (!res.ok) throw new Error("Failed");
+
+      const data = await res.json();
+
+      // Yeh line sabse important hai
+      const cleaned = data.map((cat: any) => ({
+        ...cat,
+        name: cat.name.replace(/[\u00A0\s]+/g, ' ').trim()
+      }));
+
+      setCategories(cleaned);
+      if (cleaned.length > 0 && activeTab === "") {
+        setActiveTab(cleaned[0].name); // ab space nahi hoga
+      }
+    } catch (error) {
+      console.error(error);
+      setCategories([]);
+    }
+  };
+
+  fetchCategories();
+}, []);
+
+useEffect(() => {
+  console.log('Active tab updated to:', activeTab);
+  console.log('New destinations:', currentDestinations);
+}, [activeTab, currentDestinations]);
+
 
   // Handle URL Params (Unchanged)
   useEffect(() => {
@@ -148,67 +157,99 @@ export default function HeroSection() {
 
   // ✅ NEW: Handle View All Hotels click
   const handleViewAllHotels = () => {
-    // Navigate to listing page with minimum required parameters (Today's date + 1 day)
-    const token = localStorage.getItem("shineetrip_token");
-    if (!token) {
-      setShowLoginPopup(true);
-      return;
+  const token = localStorage.getItem("shineetrip_token");
+  if (!token) {
+    setShowLoginPopup(true);
+    return; 
+  }
+
+  // Safe defaults – future dates
+  const safeCheckIn = getFutureDateString(1); // Tomorrow
+  const safeCheckOut = getFutureDateString(2); // Day after
+
+  const searchQuery = new URLSearchParams({
+    location: '', // All hotels
+    checkIn: safeCheckIn,
+    checkOut: safeCheckOut,
+    adults: '2',
+    children: '0',
+  }).toString();
+
+  navigate(`/hotellists?${searchQuery}`);
+};
+
+
+  const handleSearch = () => {
+  const token = localStorage.getItem("shineetrip_token");
+  if (!token) {
+    setShowLoginPopup(true);
+    return;
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+
+  // Location compulsory hai
+  if (!location.trim()) {
+    setErrorPopup("Please enter a location.");
+    return;
+  }
+
+  if (!availableLocations.includes(location)) {
+    setErrorPopup("Location not found. Please select from the suggestions.");
+    return;
+  }
+
+  // Final dates decide karo
+  let finalCheckIn = checkIn;
+  let finalCheckOut = checkOut;
+
+  // Agar dates daali hain → validate karo
+  if (checkIn && checkOut) {
+    if (checkIn < today || checkOut < today) {
+      setErrorPopup("Cannot search availability in the past.");
+      return;
     }
-    
-    // ✅ FIX 1: Send safe checkIn date starting from TOMORROW to avoid past date conflict
-    const safeCheckIn = getFutureDateString(1); // TOMORROW
-    const safeCheckOut = getFutureDateString(2); // Day after tomorrow
-
-    const searchQuery = new URLSearchParams({
-      location: '', // Empty location to search all
-      checkIn: safeCheckIn,
-      checkOut: safeCheckOut,
-      adults: '2',
-      children: '0',
-    }).toString();
-    
-    // Navigate to the listing page with safe defaults
-    navigate(`/hotellists?${searchQuery}`);
-  };
-
-
-  const handleSearch = async () => {
-    // Check if user is logged in
-    const token = localStorage.getItem("shineetrip_token");
-    
-    if (!token) {
-      setShowLoginPopup(true);
-      return;
-    }
-
-    // Logic for detailed search (Requires all three fields)
-    if (!isDetailedSearchReady) {
-        alert("Please fill in Location, Check-in, and Check-out dates for a detailed search.");
-        return;
+    if (checkIn >= checkOut) {
+      setErrorPopup("Check-out date must be after Check-in date.");
+      return;
     }
-    
-    // Navigate to hotel listing page with search parameters
-    const searchQuery = new URLSearchParams({
-      location,
-      checkIn,
-      checkOut,
-      adults: adults.toString(),
-      children: children.toString(),
-    }).toString();
+  } 
+  // Agar dates nahi daali → default daal do (tomorrow → day after)
+  else {
+    finalCheckIn = getFutureDateString(1);   // Tomorrow
+    finalCheckOut = getFutureDateString(2);    // Day after tomorrow
+  }
 
-    navigate(`/hotellists?${searchQuery}`);
-  };
+  // Final search query
+  const query = new URLSearchParams({
+    location,
+    checkIn: finalCheckIn,
+    checkOut: finalCheckOut,
+    adults: adults.toString(),
+    children: children.toString(),
+  }).toString();
+
+  navigate(`/hotellists?${query}`);
+};
 
   // ✅ Unified Click Handler based on Form State
   const handleButtonClick = () => {
-      // If ANY field is filled, the button displays 'Search'. Clicking it enforces full validation.
-      if (isFormFilled) {
-          handleSearch();
-      } else {
-          // If NO fields are filled, the button executes View All logic
-          handleViewAllHotels();
-      }
-  };
+  const token = localStorage.getItem("shineetrip_token");
+  if (isFormFilled) {
+    if (!token) {
+      setShowLoginPopup(true);
+      return;
+    }
+    handleSearch();
+  } 
+  else {
+    if (!token) {
+      setShowLoginPopup(true);
+      return;
+    }
+    handleViewAllHotels();
+  }
+};
 
   const closeSearchWidget = () => {
     setIsSearchVisible(false);
@@ -217,6 +258,69 @@ export default function HeroSection() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 font-opensans">
+{/* Premium Error Popup – Perfectly Matches Your Site Theme */}
+{/* Enhanced Error Popup – Golden Theme Match */}
+{errorPopup && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-in fade-in duration-300">
+    {/* Backdrop – Click to Close */}
+    <div 
+      className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+      onClick={() => setErrorPopup("")}
+    />
+
+    {/* Popup Card */}
+    <div className="relative w-full max-w-md animate-in zoom-in-95 duration-300">
+      <div 
+        className="bg-white rounded-3xl shadow-2xl overflow-hidden"
+        style={{
+          border: "2px solid rgba(210, 162, 86, 0.3)",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)"
+        }}
+      >
+        {/* Golden Top Border */}
+        <div className="h-2 bg-gradient-to-r from-[#AB7E29] via-[#EFD08D] to-[#AB7E29]" />
+
+        <div className="p-8 text-center">
+          {/* Warning Icon */}
+          <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-5 shadow-md">
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-2xl font-bold text-[#5A5550] mb-3 tracking-wide">
+            Error Fetching Results
+          </h3>
+
+          {/* Error Message */}
+          <p className="text-gray-600 text-base leading-relaxed mb-8 max-w-xs mx-auto font-medium">
+            {errorPopup}
+          </p>
+
+          {/* Close Button – Exact Golden Gradient Match */}
+          <button
+            onClick={() => setErrorPopup("")}
+            className="relative inline-flex items-center gap-3 px-10 py-4 
+                       text-white font-bold text-lg rounded-2xl
+                       transition-all transform hover:scale-105 active:scale-95
+                       shadow-lg hover:shadow-xl"
+            style={{
+              background: "linear-gradient(180.95deg, #AB7E29 0.87%, #EFD08D 217.04%)",
+              boxShadow: "0px 4px 15px rgba(171, 126, 41, 0.4)"
+            }}
+          >
+            Close & Try Again
+            <X size={18} className="ml-2" />
+          </button>
+        </div>
+
+        {/* Bottom Golden Fade */}
+        <div className="h-2 bg-gradient-to-r from-transparent via-[#D2A256]/20 to-transparent" />
+      </div>
+    </div>
+  </div>
+)}
       {/* Login Modal */}
       <LoginModal isOpen={showLoginPopup} onClose={() => setShowLoginPopup(false)} />
 
@@ -410,7 +514,8 @@ export default function HeroSection() {
               </div>
 
               {/* Search Button */}
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+              <div className="relative md:absolute md:-bottom-6 left-1/2 transform -translate-x-1/2">
+
                 <button 
                   // ✅ FIX: Using the unified click handler
                   onClick={handleButtonClick}
@@ -434,10 +539,10 @@ export default function HeroSection() {
       {/* COMBINED STATS + CATEGORIES SECTION - Single White Card */}
       <div className="pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-2">
-          <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(255,255,255,0.7)] border border-gray-300 p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-70 relative z-20">
+          <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(255,255,255,0.7)] border border-gray-300 p-8 md:p-12 pb-6 pt-20 md:pt-24 -mt-70 relative ">
           
             {/* STATS BAR - Overlapping Top Edge */}
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4">
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4 z-0">
               <div className="bg-white rounded-full shadow-xl py-3 sm:py-4 px-4 sm:px-10 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-0 border border-gray-100">
                  {[
                    ["50+", "DESTINATIONS"],
@@ -458,49 +563,50 @@ export default function HeroSection() {
             </div>
           
           {/* Tabs */}
-          <div className="flex justify-center mb-4 border-b border-gray-200">
+          <div className="flex justify-center mb-4 border-b border-gray-200 relative z-10">
             <div className="flex gap-8 overflow-x-auto no-scrollbar pb-1">
-              {tabs.map((tab) => (
-                <button 
-                  key={tab} 
-                  onClick={() => { setActiveTab(tab); setSlideIndex(0); }} 
-                  className={`pb-3 whitespace-nowrap transition-all relative font-opensans ${
-                    activeTab === tab 
-                      ? "text-gray-900" 
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                  style={{
-                    fontWeight: 500,
-                    fontSize: '18px',
-                    lineHeight: '20px',
-                    textAlign: 'center',
-                    font : 'semibold'
-                  }}
-                >
-                  {tab}
-                  {activeTab === tab && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-black"></div>
-                  )}
-                </button>
-              ))}
+              {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                       console.log('Clicked tab:', cat.name); // Check if click fires
+                       setActiveTab(cat.name);
+                       setSlideIndex(0);
+                     }}
+                     
+                    className={`pb-3 whitespace-nowrap transition-all relative font-opensans ${
+                      activeTab === cat.name ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {cat.name}
+                    {activeTab === cat.name && (
+                      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-black"></div>
+                    )}
+                  </button>
+                ))}
+                
             </div>
           </div>
 
           {/* Carousel Controls */}
           <div className="relative">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              {visibleDestinations.map((dest, i) => (
-                <div key={i} className="group cursor-pointer">
-                  <div className="relative overflow-hidden rounded-3xl aspect-[4/3.5] mb-2 shadow-sm">
-                    <img 
-                      src={dest.image} 
-                      alt={dest.name} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                  </div>
-                  <h3 className="text-center text-gray-900 text-xl font-bold">{dest.name}</h3>
-                </div>
-              ))}
+              {visibleDestinations.map((dest: any, i: number) => (
+                  <div 
+                    key={i}
+                    className="group cursor-pointer"
+                    onClick={() => navigate(`/hotellists?destination=${dest.name}`)}
+                  >
+                    <div className="relative overflow-hidden rounded-3xl aspect-[4/3.5] mb-2 shadow-sm">
+                      <img
+                        src={dest.img_url}
+                        alt={dest.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                    </div>
+                    <h3 className="text-center text-gray-900 text-xl font-bold">{dest.name}</h3>
+                  </div>
+                ))}
             </div>
 
             {/* Navigation Buttons */}
