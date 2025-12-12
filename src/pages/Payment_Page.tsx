@@ -38,6 +38,10 @@ const BookingPage: React.FC = () => {
     const [paymentMessage, setPaymentMessage] = useState('');
     const [isBookingSuccessful, setIsBookingSuccessful] = useState(false); // ✅ NEW State for success card
     const [successOrderId, setSuccessOrderId] = useState(''); // Store the final Order ID
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+    const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
+    const [showTimeoutModal, setShowTimeoutModal] = useState(false);
+    const [showAuthErrorModal, setShowAuthErrorModal] = useState(false);
     
 
     const navigate = useNavigate(); // ✅ FIX 2: useNavigate hook use kiya
@@ -75,11 +79,74 @@ const BookingPage: React.FC = () => {
 
     console.log("Using API Base:", API_BASE);
     console.log("Create Order URL:", CREATE_ORDER_URL);
+
+
+    // --- NEW HELPER: Validation Logic ---
+const validateForm = () => {
+    const errors: { [key: string]: string } = {};
+
+    // Regex for basic validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Simple phone check: 8 to 15 digits
+    const phoneRegex = /^\d{8,15}$/; 
+    // Basic Name check: letters and spaces only
+    const nameRegex = /^[A-Za-z\s]+$/; 
+
+    // 1. Phone Validation (Required + Format)
+    if (!formData.phone.trim()) {
+        errors.phone = "Phone number is required.";
+    } else if (!phoneRegex.test(formData.phone.trim())) {
+        errors.phone = "Please enter a valid phone number (8-15 digits).";
+    }
+
+    // 2. Email Validation (Required + Format)
+    if (!formData.email.trim()) {
+        errors.email = "Email is required.";
+    } else if (!emailRegex.test(formData.email.trim())) {
+        errors.email = "Please enter a valid email address.";
+    }
+
+    // 3. Title Validation (Required)
+    if (!formData.title) {
+        errors.title = "Title is required.";
+    }
+
+    // 4. First Name Validation (Required + Format)
+    if (!formData.firstName.trim()) {
+        errors.firstName = "First name is required.";
+    } else if (!nameRegex.test(formData.firstName.trim())) {
+        errors.firstName = "First name can only contain letters and spaces.";
+    }
+
+    // 5. Last Name Validation (Required + Format)
+    if (!formData.lastName.trim()) {
+        errors.lastName = "Last name is required.";
+    } else if (!nameRegex.test(formData.lastName.trim())) {
+        errors.lastName = "Last name can only contain letters and spaces.";
+    }
+
+    // 6. Policy Agreement (Checked)
+    if (!formData.agreePolicy) {
+        errors.agreePolicy = "You must agree to the privacy policy.";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0; // Return true if no errors
+};
     
     // --- Core Razorpay Logic ---
     const handlePayment = async (e: React.FormEvent) => {
         e.preventDefault();
         setPaymentMessage('');
+        setFormErrors({});
+        setIsRazorpayOpen(false);
+
+
+        if (!validateForm()) {
+        // Validation fail hone par, error message set karo
+        setPaymentMessage('Please check your details. All required fields must be valid.'); 
+        return; // Execution yahan ruk jayega
+    }
 
         if (!formData.agreePolicy) {
             setPaymentMessage('You must agree to the privacy policy.');
@@ -101,13 +168,17 @@ const BookingPage: React.FC = () => {
     navigate('/login'); // ya login modal khol
     return;
 }
+if (finalTotal <= 0) {
+        setPaymentMessage('Invalid total price for booking.');
+        return;
+    }
         
         setIsProcessing(true);
         const amountInPaise = Math.round(finalTotal * 100);
 
         console.log("Token check before API:", token ? "Token present" : "TOKEN MISSING"); // NEW!
         console.log("Token",token);
-console.log("Customer ID check before API:", customerId); // NEW!
+        console.log("Customer ID check before API:", customerId); // NEW!
 
         try {
             // Step 1: POST /order/create to generate Razorpay Order ID
@@ -141,8 +212,19 @@ console.log("Customer ID check before API:", customerId);
             });
 
             const responseText = await orderResponse.text();
+            
 
             if (!orderResponse.ok) {
+                const errorStatus = orderResponse.status;
+
+                // ✅ CRITICAL FIX: Token Expiry (401/403) check
+                if (errorStatus === 401 || errorStatus === 403) {
+                    // Reset state & show auth popup
+                    localStorage.removeItem('shineetrip_token');
+                    setIsProcessing(false); 
+                    setShowAuthErrorModal(true);
+                    return; 
+                }
                 // Detailed error handling for 404/403/Customer Not Found
                 let errorMsg = `API failed (${orderResponse.status}).`;
                 try {
@@ -189,13 +271,58 @@ console.log("Customer ID check before API:", customerId);
             const rzp1 = new window.Razorpay(options); 
             
             // Handle Payment Failure/Cancellation
-            rzp1.on('payment.failed', async function (response: any) {
-                setPaymentMessage(`Payment Failed: ${response.error.description}`);
-                await markOrderAsFailed(razorpayOrderId, response.error);
-                setIsProcessing(false);
-            });
-            
+            rzp1.on('modal.close', function() {
+            // ✅ CRITICAL FIX: Functional update for reliable state check
+            // Isse isProcessing state ki current value milegi
+            setIsProcessing((currentIsProcessing) => {
+            if (!isBookingSuccessful && currentIsProcessing) {
+            setPaymentMessage('Payment window closed. Please try again.');
+            return false; // Loader ko band karo
+        }
+        return currentIsProcessing;
+    });
+    
+            setIsRazorpayOpen(false); // Ye to direct set ho sakta hai
+        });
+            rzp1.on('modal.close', function() {
+            // Agar payment successful nahi hua hai, toh isProcessing ko reset kar do.
+            if (!isBookingSuccessful) {
+                setPaymentMessage('Payment window closed. Please try again.');
+                setIsProcessing(false); 
+            }
+            setIsRazorpayOpen(false);
+            if (!isBookingSuccessful) {
+                    // Alert dikha kar page ko reload kar do
+                    alert("Payment process cancelled. Please check your details and try again.");
+                    window.location.reload(); 
+                    // Note: isProcessing aur isRazorpayOpen yahan set karne ki zaroorat nahi hai 
+                    // kyunki page reload ho raha hai.
+                }
+        });
+            setIsRazorpayOpen(true);
             rzp1.open(); // Open the payment gateway popup
+
+            setTimeout(() => {
+                // ✅ CRITICAL FIX: Functional update use karein
+                setIsProcessing((currentIsProcessing) => {
+                    setIsRazorpayOpen((currentIsRazorpayOpen) => {
+                        // Agar abhi bhi processing TRUE hai, aur modal open flag TRUE hai, aur booking successful nahi hui
+                        if (currentIsProcessing && currentIsRazorpayOpen && !isBookingSuccessful) {
+                            console.warn("Razorpay close event missed. Forcibly resetting state.");
+                            setShowTimeoutModal(true);
+                            setPaymentMessage('Payment window timed out or connection lost. Please try again.');
+                            return false; // isRazorpayOpen ko false karo
+                        }
+                        return currentIsRazorpayOpen; // Agar condition fail, toh state change mat karo
+                    });
+                    
+                    // Agar isProcessing TRUE tha aur humne reset kiya, toh naya state FALSE hoga
+                    if (currentIsProcessing && isRazorpayOpen && !isBookingSuccessful) {
+                        return false;
+                    }
+                    return currentIsProcessing;
+                });
+            }, 3000);
 
         } catch (error) {
             setPaymentMessage(error instanceof Error ? error.message : 'An unexpected error occurred during payment.');
@@ -277,6 +404,84 @@ console.log("Customer ID check before API:", customerId);
 
     return (
         <div className="min-h-screen bg-gray-100 pt-[116px]">
+            {/* ✅ NEW: Timeout/Connection Lost Modal */}
+{showTimeoutModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-in fade-in duration-300">
+        {/* Backdrop */}
+        <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => window.location.reload()} // Background click par bhi reload
+        />
+
+        {/* Popup Card */}
+        <div 
+            className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 text-center animate-in zoom-in-95 duration-300"
+            style={{ border: "2px solid #D2A256" }}
+        >
+            <X 
+                className="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-800" 
+                size={20} 
+                onClick={() => window.location.reload()} // Close button par reload
+            />
+            
+            <Clock size={40} className="mx-auto text-red-500 mb-4" />
+            
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Connection Interrupted</h3>
+            
+            {/* ✅ REQUIRED MESSAGE */}
+            <p className="text-gray-600 text-base leading-relaxed mb-6 font-medium">
+                Payment window timed out or connection lost. Please try again.
+            </p>
+
+            {/* Reload Button */}
+            <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-yellow-600 text-white font-semibold py-3 rounded-lg hover:bg-yellow-700 transition-colors"
+            >
+                Try Again / Reload Page
+            </button>
+        </div>
+    </div>
+)}
+
+{/* ✅ NEW: Authorization/Token Expired Modal */}
+{showAuthErrorModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-in fade-in duration-300">
+        {/* Backdrop */}
+        <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => navigate('/')} // Redirect to home on backdrop click
+        />
+
+        {/* Popup Card */}
+        <div 
+            className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 text-center animate-in zoom-in-95 duration-300"
+            style={{ border: "2px solid #D2A256" }}
+        >
+            <X 
+                className="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-800" 
+                size={20} 
+                onClick={() => navigate('/')} // Close button par redirect
+            />
+            
+            <Shield size={40} className="mx-auto text-yellow-600 mb-4" />
+            
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Session Expired</h3>
+            
+            <p className="text-gray-600 text-base leading-relaxed mb-6 font-medium">
+                Your session has expired while processing the payment. Please log in again to complete your booking.
+            </p>
+
+            {/* Reload/Login Button */}
+            <button
+                onClick={() => navigate('/')} // Home/Login page par bhej do
+                className="w-full bg-yellow-600 text-white font-semibold py-3 rounded-lg hover:bg-yellow-700 transition-colors"
+            >
+                Go to Login Page
+            </button>
+        </div>
+    </div>
+)}
             {/* Render Success Card if successful */}
             {isBookingSuccessful && successOrderId && (
                 <BookingSuccessCard roomName={roomName} orderId={successOrderId} />
@@ -308,75 +513,103 @@ console.log("Customer ID check before API:", customerId);
                             <form onSubmit={handlePayment} className="space-y-4"> {/* ✅ Form tag added with onSubmit */}
                                 {/* Phone and Email Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex gap-2">
-                                        <select
-                                            name="phoneCode"
-                                            value={formData.phoneCode}
-                                            onChange={handleInputChange}
-                                            className="w-24 px-3 py-2.5 border border-gray-300 rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                                            disabled={isProcessing}
-                                        >
-                                            <option>+91</option>
-                                            <option>+1</option>
-                                            <option>+44</option>
-                                        </select>
+                                    {/* ===== PHONE NUMBER FIELD (Updated) ===== */}
+                                    <div className="flex flex-col gap-1"> 
+                                        <div className="flex gap-2">
+                                            <select
+                                                name="phoneCode"
+                                                value={formData.phoneCode}
+                                                onChange={handleInputChange}
+                                                className={`w-24 px-3 py-2.5 border rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
+                                                disabled={isProcessing}
+                                            >
+                                                <option>+91</option>
+                                                <option>+1</option>
+                                                <option>+44</option>
+                                            </select>
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                placeholder="Phone Number"
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                                className={`flex-1 px-4 py-2.5 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
+                                                disabled={isProcessing}
+                                                required
+                                            />
+                                        </div>
+                                        {/* ✅ Error Display for Phone */}
+                                        {formErrors.phone && <span className="text-red-500 text-xs pl-2">{formErrors.phone}</span>} 
+                                    </div>
+                                    
+                                    {/* ===== EMAIL FIELD (Added wrapper) ===== */}
+                                    <div className="flex flex-col gap-1">
                                         <input
-                                            type="tel"
-                                            name="phone"
-                                            placeholder="Phone Number"
-                                            value={formData.phone}
+                                            type="email"
+                                            name="email"
+                                            placeholder="Email"
+                                            value={formData.email}
                                             onChange={handleInputChange}
-                                            className="flex-1 px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                            className={`px-4 py-2.5 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
                                             disabled={isProcessing}
                                             required
                                         />
+                                        {/* ✅ Error Display for Email */}
+                                        {formErrors.email && <span className="text-red-500 text-xs pl-2">{formErrors.email}</span>}
                                     </div>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        placeholder="Email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        className="px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                                            disabled={isProcessing}
-                                        required
-                                    />
                                 </div>
 
                                 {/* Title and Names Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <select
-                                        name="title"
-                                        value={formData.title}
-                                        onChange={handleInputChange}
-                                        className="px-4 py-2.5 border border-gray-300 rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-500"
+                                    {/* ===== TITLE SELECT (Wrapped) ===== */}
+                                    <div className="flex flex-col gap-1">
+                                        <select
+                                            name="title"
+                                            value={formData.title}
+                                            onChange={handleInputChange}
+                                            className={`px-4 py-2.5 border rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-500 ${formErrors.title ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
                                             disabled={isProcessing}
-                                    >
-                                        <option value="">Select Title*</option>
-                                        <option>Mr.</option>
-                                        <option>Mrs.</option>
-                                        <option>Ms.</option>
-                                    </select>
-                                    <input
-                                        type="text"
-                                        name="firstName"
-                                        placeholder="First Name"
-                                        value={formData.firstName}
-                                        onChange={handleInputChange}
-                                        className="px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                        >
+                                            <option value="">Select Title*</option>
+                                            <option>Mr.</option>
+                                            <option>Mrs.</option>
+                                            <option>Ms.</option>
+                                        </select>
+                                        {/* ✅ Error Display for Title */}
+                                        {formErrors.title && <span className="text-red-500 text-xs pl-2">{formErrors.title}</span>}
+                                    </div>
+                                    
+                                    {/* ===== FIRST NAME INPUT (Wrapped) ===== */}
+                                    <div className="flex flex-col gap-1">
+                                        <input
+                                            type="text"
+                                            name="firstName"
+                                            placeholder="First Name"
+                                            value={formData.firstName}
+                                            onChange={handleInputChange}
+                                            className={`px-4 py-2.5 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${formErrors.firstName ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
                                             disabled={isProcessing}
-                                        required
-                                    />
-                                    <input
-                                        type="text"
-                                        name="lastName"
-                                        placeholder="Last Name"
-                                        value={formData.lastName}
-                                        onChange={handleInputChange}
-                                        className="px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                            required
+                                        />
+                                        {/* ✅ Error Display for First Name */}
+                                        {formErrors.firstName && <span className="text-red-500 text-xs pl-2">{formErrors.firstName}</span>}
+                                    </div>
+                                    
+                                    {/* ===== LAST NAME INPUT (Wrapped) ===== */}
+                                    <div className="flex flex-col gap-1">
+                                        <input
+                                            type="text"
+                                            name="lastName"
+                                            placeholder="Last Name"
+                                            value={formData.lastName}
+                                            onChange={handleInputChange}
+                                            className={`px-4 py-2.5 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${formErrors.lastName ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
                                             disabled={isProcessing}
-                                        required
-                                    />
+                                            required
+                                        />
+                                        {/* ✅ Error Display for Last Name */}
+                                        {formErrors.lastName && <span className="text-red-500 text-xs pl-2">{formErrors.lastName}</span>}
+                                    </div>
                                 </div>
 
                                 {/* GST Number */}
@@ -480,9 +713,9 @@ console.log("Customer ID check before API:", customerId);
                                             <div className="text-sm text-gray-600">Room Only -</div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <button className="text-gray-400 hover:text-gray-600">
+                                            {/* <button className="text-gray-400 hover:text-gray-600">
                                                 <Edit2 size={14} />
-                                            </button>
+                                            </button> */}
                                             <span className="font-medium">INR {retailPrice.toLocaleString()}</span>
                                         </div>
                                     </div>
@@ -493,15 +726,15 @@ console.log("Customer ID check before API:", customerId);
                                     <div className="font-medium mb-3">Stay Information</div>
                                     <div className="flex justify-between items-center text-sm mb-2">
                                         <span className="text-gray-600">**{formatDate(checkInStr)} - {formatDate(checkOutStr)}**</span>
-                                        <button className="text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                                        {/* <button className="text-gray-400 hover:text-gray-600 flex items-center gap-1">
                                             Modify <Edit2 size={12} />
-                                        </button>
+                                        </button> */}
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-gray-600">2 Adults, 0 Children, 1 Rooms</span>
-                                        <button className="text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                                        {/* <button className="text-gray-400 hover:text-gray-600 flex items-center gap-1">
                                             Modify <Edit2 size={12} />
-                                        </button>
+                                        </button> */}
                                     </div>
                                 </div>
 
