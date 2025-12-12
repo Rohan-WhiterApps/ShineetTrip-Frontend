@@ -5,12 +5,18 @@ import { signInWithFacebook, signInWithGoogle } from "@/Firebase/firebasevalidat
 import { PhoneLoginForm } from "./phone.login.form"
 import Logo from "../../assets/Logo.png"
 import type { User } from "firebase/auth" // Using 'import type'
+import { FcGoogle } from "react-icons/fc";
+import { FaFacebook } from "react-icons/fa";
+import { FaApple } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
+
 
 // Logo components for social login buttons
-const GoogleLogo = () => <span>🔍</span>
-const FacebookLogo = () => <span>f</span>
-const AppleLogo = () => <span>🍎</span>
-const EmailLogo = () => <span>✉️</span>
+const GoogleLogo = () => <FcGoogle size={22} />;
+const FacebookLogo = () => <FaFacebook size={22} color="#1877F2" />;
+const AppleLogo = () => <FaApple size={22} />;
+const EmailLogo = () => <MdEmail size={22} />;
+
 
 // === CHECK OR CREATE CUSTOMER IN DATABASE (UNCHANGED LOGIC) ===
 const checkOrCreateCustomer = async (user: User, token: string): Promise<number> => {
