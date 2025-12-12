@@ -131,6 +131,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           const dbCustomerId = await checkOrCreateCustomer(user, token);
           // THIS IS THE FINAL ID USED FOR BOOKING API PAYLOADS
           localStorage.setItem("shineetrip_db_customer_id", String(dbCustomerId)); 
+          
           console.log("Login Success! DB Customer ID saved:", dbCustomerId);
       } catch (dbError) {
           console.error("Database Customer Link Failed:", dbError);

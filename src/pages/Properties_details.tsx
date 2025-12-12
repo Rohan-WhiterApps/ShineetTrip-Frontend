@@ -12,6 +12,7 @@ import HotelReviews from '../components/ui/HotelReviews';
 // Main Component: RoomBookingPage
 export default function RoomBookingPage() {
     const { hotelId } = useParams<{ hotelId: string }>();
+    const hotelIdNumber = hotelId ? Number(hotelId) : null;
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
@@ -321,7 +322,7 @@ export default function RoomBookingPage() {
                 </div>
 
                 {/* GUEST FAVORITE REVIEWS SECTION */}
-                {hotelId && <HotelReviews hotelId={hotelId} />}
+                {hotelIdNumber && <HotelReviews hotelId={hotelIdNumber} />}
                 
             </div>
             
