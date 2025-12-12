@@ -56,6 +56,11 @@ const BookingPage: React.FC = () => {
 
     const token = localStorage.getItem('shineetrip_token');
     const customerIdStr = localStorage.getItem('shineetrip_db_customer_id') || '1'; // Using db customer ID
+    if (!customerIdStr || customerIdStr === '1' || isNaN(parseInt(customerIdStr))) {
+    setPaymentMessage('Customer profile not loaded. Please log out and log in again.');
+    setIsProcessing(false);
+    return;
+}
     const customerId = parseInt(customerIdStr) || 1; 
 
     // ✅ FINAL CONFIRMED PUBLIC KEY
@@ -63,9 +68,13 @@ const BookingPage: React.FC = () => {
 
     // API URLS - Confirmed by your Postman testing
     const API_BASE = 'http://46.62.160.188:3000';
-    const CREATE_ORDER_URL = `${API_BASE}/order/create`;
+    const CREATE_ORDER_URL = `${API_BASE}/order/book-now`;
     const VERIFY_URL = `${API_BASE}/order/success`;
     const FAILURE_URL = `${API_BASE}/order/failure`;
+    CREATE_ORDER_URL.trim();
+
+    console.log("Using API Base:", API_BASE);
+    console.log("Create Order URL:", CREATE_ORDER_URL);
     
     // --- Core Razorpay Logic ---
     const handlePayment = async (e: React.FormEvent) => {
@@ -86,9 +95,19 @@ const BookingPage: React.FC = () => {
              setPaymentMessage('Authorization token or Customer ID missing/invalid. Please log in again.');
              return;
         }
+
+        if (!token) {
+    setPaymentMessage('Session expired. Please log in again.');
+    navigate('/login'); // ya login modal khol
+    return;
+}
         
         setIsProcessing(true);
         const amountInPaise = Math.round(finalTotal * 100);
+
+        console.log("Token check before API:", token ? "Token present" : "TOKEN MISSING"); // NEW!
+        console.log("Token",token);
+console.log("Customer ID check before API:", customerId); // NEW!
 
         try {
             // Step 1: POST /order/create to generate Razorpay Order ID
@@ -96,7 +115,7 @@ const BookingPage: React.FC = () => {
                 orderRooms: [
                     {
                         propertyId: parseInt(propertyId),
-                        roomId: parseInt(roomId), 
+                        roomTypeId: parseInt(roomId),
                         adults: parseInt(searchParams.get('adults') || '2'),
                         children: parseInt(searchParams.get('children') || '0'),
                         checkIn: checkInStr,
@@ -110,6 +129,10 @@ const BookingPage: React.FC = () => {
                 notes: { bookingSource: "web-portal-checkout" },
                 customerId: customerId, // Using parsed integer customer ID
             };
+
+            console.log("Create Order Payload Sent:", createOrderPayload);
+              console.log("Token",token);
+console.log("Customer ID check before API:", customerId);
 
             const orderResponse = await fetch(CREATE_ORDER_URL, {
                 method: 'POST',

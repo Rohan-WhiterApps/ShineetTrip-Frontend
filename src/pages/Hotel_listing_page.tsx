@@ -9,6 +9,8 @@ import {
   Calendar,
   Search,
   SlidersHorizontal,
+  // X icon yahaan add karein
+  X, 
   Wifi,
 } from "lucide-react";
 
@@ -63,6 +65,7 @@ const HotelListingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
   // API Fetch parameters
   // FIX 1: Location default "Manali" removed from URL read
@@ -89,6 +92,11 @@ const HotelListingPage: React.FC = () => {
       alert("Check-in date cannot be in the past. Please select today or a future date.");
       return;
     }
+   
+    if (currentCheckOut <= currentCheckIn) {
+        alert("Check-out date must be after Check-in date.");
+        return;
+    }
 
     const newSearchParams = new URLSearchParams({
       location: currentLocation,
@@ -303,109 +311,127 @@ useEffect(() => {
   // ===============================================
 
 
-  const SearchBar = (
-    <div className="bg-white border-b border-gray-200 pt-6 sticky top-[90px] z-20 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        {/* Search Fields - EXACT FIGMA STYLE */}
-        <div className="flex items-center justify-center gap-0 mb-4 rounded-lg overflow-hidden border border-gray-300 bg-gray-200">
-          {/* Location Field */}
-          <div className="flex-1 max-w-[250px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
-              CITY, AREA OR PROPERTY
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#D2A256]" />
-              <input
-                type="text"
-                value={currentLocation}
-                onChange={(e) => setCurrentLocation(e.target.value)}
-                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
-                placeholder="Enter location"
-              />
-            </div>
-          </div>
+const SearchBar = (
+    <div className="bg-white border-b border-gray-200 pt-6 sticky top-[64px] sm:top-[90px] z-20 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        
+        {/* Search Fields - FULLY RESPONSIVE */}
+        <div className="
+             flex flex-col sm:flex-row items-stretch sm:items-center 
+             justify-center gap-0 mb-4 rounded-lg overflow-hidden 
+             border border-gray-300 bg-gray-200
+        ">
+          
+          {/* Location Field */}
+          <div className="flex-1 w-full sm:max-w-[250px] bg-gray-200 px-4 py-3 border-b sm:border-r sm:border-b-0 border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
+              CITY, AREA OR PROPERTY
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#D2A256]" />
+              <input
+                type="text"
+                value={currentLocation}
+                onChange={(e) => setCurrentLocation(e.target.value)}
+                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
+                placeholder="Enter location"
+              />
+            </div>
+          </div>
 
-          {/* Check-in Field */}
-          <div className="flex-1 max-w-[200px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-IN</div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#D2A256]" />
-              <input
-                type="date"
-                value={currentCheckIn}
-                onChange={(e) => setCurrentCheckIn(e.target.value)}
-                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Check-in Field */}
+          <div className="flex-1 w-full sm:max-w-[200px] bg-gray-200 px-4 py-3 border-b sm:border-r sm:border-b-0 border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-IN</div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#D2A256]" />
+              <input
+                type="date"
+                value={currentCheckIn}
+                onChange={(e) => setCurrentCheckIn(e.target.value)}
+                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
+              />
+            </div>
+          </div>
 
-          {/* Check-out Field */}
-          <div className="flex-1 max-w-[200px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-OUT</div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#D2A256]" />
-              <input
-                type="date"
-                value={currentCheckOut}
-                onChange={(e) => setCurrentCheckOut(e.target.value)}
-                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Check-out Field */}
+          <div className="flex-1 w-full sm:max-w-[200px] bg-gray-200 px-4 py-3 border-b sm:border-r sm:border-b-0 border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">CHECK-OUT</div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#D2A256]" />
+              <input
+                type="date"
+                value={currentCheckOut}
+                onChange={(e) => setCurrentCheckOut(e.target.value)}
+                className="text-base font-medium text-gray-900 bg-transparent w-full focus:outline-none"
+              />
+            </div>
+          </div>
 
-          {/* Room & Guest Field */}
-          <div className="flex-1 max-w-[250px] bg-gray-200 px-4 py-3 border-r border-gray-300">
-            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">ROOM & GUEST</div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#D2A256]" />
-              <span className="text-base font-medium text-gray-900">
-                1 Room, {currentAdults} Adult{parseInt(currentAdults) > 1 ? "s" : ""}
-              </span>
-            </div>
-          </div>
+          {/* Room & Guest Field */}
+          {/* Note: Isme right border sirf sm:screen par chahiye, mobile par nahi, isliye border-r hataya */}
+          <div className="flex-1 w-full sm:max-w-[250px] bg-gray-200 px-4 py-3 sm:border-r-0 border-b-0 border-gray-300">
+            <div className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">ROOM & GUEST</div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#D2A256]" />
+              <span className="text-base font-medium text-gray-900">
+                1 Room, {currentAdults} Adult{parseInt(currentAdults) > 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
 
-          {/* Search Button - Yellow/Gold color as in Figma */}
-          <div className="flex-shrink-0 p-2">
-            <button
-              onClick={handleSearchClick} // ✅ NEW HANDLER
-              className="bg-[#D2A256] text-white p-3 rounded-full hover:bg-[#c2934b] transition-colors shadow-lg"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Sort Options */}
-        <div className="flex items-center gap-4 justify-start flex-wrap mt-2">
-          <div className="flex items-center gap-2 text-gray-900 font-semibold text-sm">
-            <SlidersHorizontal className="w-4 h-4 text-[#D2A256]" />
-            <span>Sort By:</span>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            {sortOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setSortBy(option)}
-                className={`px-3 py-1.5 rounded-full text-xs transition-all font-medium border ${
-                  sortBy === option
-                    ? "bg-[#D2A256] text-white border-[#D2A256]"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Temporary Button for Figma Style */}
-        <div className="flex justify-center mt-3">
-             <button onClick={handleSearchClick} className="bg-black text-white px-8 py-2 rounded-lg font-semibold hover:bg-gray-800">
-                {currentLocation ? 'Search' : 'View All Hotels'}
+          {/* Search Button - Yellow/Gold color as in Figma */}
+          <div className="flex-shrink-0 p-2">
+            <button
+              onClick={handleSearchClick}
+              className="bg-[#D2A256] text-white p-3 rounded-full hover:bg-[#c2934b] transition-colors shadow-lg"
+            >
+              <Search className="w-5 h-5" />
             </button>
+          </div>
         </div>
-      </div>
-    </div>
-  );
+
+        {/* Sort Options / Mobile Filter Toggle */}
+        <div className="flex items-center justify-between flex-wrap mt-2">
+          
+          {/* 1. Sort Label (Desktop Only) */}
+          <div className="hidden sm:flex items-center gap-2 text-gray-900 font-semibold text-sm">
+            <SlidersHorizontal className="w-4 h-4 text-[#D2A256]" />
+            <span>Sort By:</span>
+          </div>
+
+          {/* 2. Sort Options Buttons (Desktop Only) */}
+          <div className="hidden sm:flex gap-3 flex-wrap">
+            {sortOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setSortBy(option)}
+                className={`px-3 py-1.5 rounded-full text-xs transition-all font-medium border ${
+                  sortBy === option
+                    ? "bg-[#D2A256] text-white border-[#D2A256]"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+          
+          {/* 3. Mobile Filter/Sort Button (Mobile Only) */}
+          {/* Ye button Side Bar ko open karega */}
+          <button
+              onClick={() => setIsSideBarOpen(true)}
+              className="sm:hidden flex items-center gap-2 px-4 py-2 bg-[#D2A256] text-white rounded-lg font-semibold"
+          >
+              <SlidersHorizontal className="w-4 h-4" />
+              Sort & Filter
+          </button>
+          
+        </div>
+        
+        {/* Temporary Button for Figma Style (Hata diya gaya hai jaisa aapne pichle response mein suggest kiya tha) */}
+      </div>
+    </div>
+);
 
   // --- Rendering UI ---
 
@@ -422,24 +448,7 @@ useEffect(() => {
   }
 
   // Handle No Results State / Error State
-  if (hotels.length === 0 && hasSearched) {
-    return (
-      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
-        {SearchBar}
-        <div className="flex items-center justify-center pt-24 pb-24">
-          <div className="text-center p-12 rounded-lg shadow-md bg-white">
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">
-              {fetchError ? "Error Fetching Results" : "No Properties Found"}
-            </h2>
-            <p className="text-red-600 mb-3">
-              {fetchError || "Try adjusting your filters, location, or dates."}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
       {SearchBar}

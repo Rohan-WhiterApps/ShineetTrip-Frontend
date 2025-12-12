@@ -3,6 +3,27 @@ import { MapPin, Calendar, Users, Search, ChevronLeft, ChevronRight, ChevronDown
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { LoginModal } from "../Login/Loginpage";
 
+
+// --- TYPE DEFINITIONS ---
+
+// 1. Destination Item Structure
+interface Destination {
+  id: number;
+  name: string;
+  index: number;
+  img_url: string;
+  redirect_url: string; 
+  categoryId: number;
+}
+
+// 2. Home Category Structure
+interface Category {
+  id: number;
+  name: string;
+  index: number;
+  destinations: Destination[]; 
+}
+
 export default function HeroSection() {
   const [activeTab, setActiveTab] = useState<string>("");
   const [slideIndex, setSlideIndex] = useState(0);
@@ -31,7 +52,7 @@ export default function HeroSection() {
 
   const searchTabs = ["Hotels", "Flights", "Trains", "Holiday Packages", "Events"];
 
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
 
 
@@ -65,23 +86,45 @@ export default function HeroSection() {
   const isDetailedSearchReady = location.trim() !== "" && checkIn.trim() !== "" && checkOut.trim() !== "";
 
 
-  // Fetch Locations (Unchanged)
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const res = await fetch("http://46.62.160.188:3000/states?isActive=true");
-        if (res.ok) {
-          const data = await res.json();
-          const names = data.map((item: any) => item.name);
-          setAvailableLocations(names);
-        }
-      } catch (error) {
-        console.error("Failed to fetch locations:", error);
-      }
-    };
-    fetchLocations();
-  }, []);
-  
+  
+// FETCH ALL CITIES + COUNTRIES (100% WORKING - NO RED LINE)
+useEffect(() => {
+  const fetchLocations = async () => {
+    try {
+      const token = localStorage.getItem("shineetrip_token");
+      const res = await fetch("http://46.62.160.188:3000/properties/search", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (!res.ok) {
+        setAvailableLocations([]);
+        return;
+      }
+
+      const { data } = await res.json();
+
+      const locations: string[] = Array.from(
+        new Set(
+          data
+            .filter((p: any) => p.city && p.country)
+            .map((p: any) => {
+              const city = String(p.city || "").trim();
+              const country = String(p.country || "").trim().toUpperCase();
+              return city && country ? `${city}, ${country}` : null;
+            })
+            .filter((loc: string | null): loc is string => loc !== null && loc !== ", ")
+        )
+      ).sort() as string[];
+
+      setAvailableLocations(locations);
+    } catch (error) {
+      console.error("Failed to fetch locations:", error);
+      setAvailableLocations([]);
+    }
+  };
+
+  fetchLocations();
+}, []);  
   // Poora useEffect replace kar do (sirf yeh wala useEffect)
 useEffect(() => {
   const fetchCategories = async () => {
@@ -168,7 +211,7 @@ useEffect(() => {
   const safeCheckOut = getFutureDateString(2); // Day after
 
   const searchQuery = new URLSearchParams({
-    location: '', // All hotels
+    location: "", // All hotels
     checkIn: safeCheckIn,
     checkOut: safeCheckOut,
     adults: '2',
@@ -179,59 +222,81 @@ useEffect(() => {
 };
 
 
-  const handleSearch = () => {
-  const token = localStorage.getItem("shineetrip_token");
-  if (!token) {
-    setShowLoginPopup(true);
-    return;
-  }
-
-  const today = new Date().toISOString().split("T")[0];
-
-  // Location compulsory hai
-  if (!location.trim()) {
-    setErrorPopup("Please enter a location.");
-    return;
-  }
-
-  if (!availableLocations.includes(location)) {
-    setErrorPopup("Location not found. Please select from the suggestions.");
-    return;
-  }
-
-  // Final dates decide karo
-  let finalCheckIn = checkIn;
-  let finalCheckOut = checkOut;
-
-  // Agar dates daali hain → validate karo
-  if (checkIn && checkOut) {
-    if (checkIn < today || checkOut < today) {
-      setErrorPopup("Cannot search availability in the past.");
-      return;
-    }
-    if (checkIn >= checkOut) {
-      setErrorPopup("Check-out date must be after Check-in date.");
-      return;
-    }
-  } 
-  // Agar dates nahi daali → default daal do (tomorrow → day after)
-  else {
-    finalCheckIn = getFutureDateString(1);   // Tomorrow
-    finalCheckOut = getFutureDateString(2);    // Day after tomorrow
-  }
-
-  // Final search query
-  const query = new URLSearchParams({
-    location,
-    checkIn: finalCheckIn,
-    checkOut: finalCheckOut,
-    adults: adults.toString(),
-    children: children.toString(),
-  }).toString();
-
-  navigate(`/hotellists?${query}`);
+// Helper to extract city from "City, Country"
+const extractCity = (loc: string): string => {
+  return loc.split(",")[0].trim();
 };
 
+// Final handleSearch — Copy-Paste kar de
+// Final handleSearch
+const handleSearch = () => {
+    // 1. Authentication Check
+    const token = localStorage.getItem("shineetrip_token");
+    if (!token) {
+        setShowLoginPopup(true);
+        return;
+    }
+
+    // 2. Location Presence Check
+    if (!location.trim()) {
+        setErrorPopup("Please enter a location.");
+        return;
+    }
+
+    // 3. Location Validity Check (using current available locations)
+    const userInput = location.trim().toLowerCase();
+
+    const isValid = availableLocations.some(loc => {
+        const lowerLoc = loc.toLowerCase();                   
+        const cityOnly = loc.split(",")[0].trim().toLowerCase(); 
+
+        return (
+            lowerLoc === userInput || 
+            lowerLoc.includes(userInput) || 
+            cityOnly === userInput || 
+            cityOnly.includes(userInput) || 
+            userInput.includes(cityOnly) || 
+            userInput.includes(loc.split(",")[1]?.trim().toLowerCase()) 
+        );
+    });
+
+    if (!isValid) {
+        setErrorPopup("Location not found. Please select from the suggestions.");
+        return;
+    }
+
+    // 4. Date Validation Check
+    let finalCheckIn = checkIn || getFutureDateString(1);
+    let finalCheckOut = checkOut || getFutureDateString(2);
+
+    const today = new Date().toISOString().split("T")[0];
+
+    if (checkIn && checkOut) {
+        // Checking for Past dates OR Check-in >= Check-out
+        if (checkIn < today || checkOut < today || checkIn >= checkOut) {
+            setErrorPopup("Please select valid dates. Check-out must be after Check-in.");
+            return; // Execution ko yahi rok dega
+        }
+    } else if (checkIn || checkOut) {
+        // Agar user ne sirf ek date daali hai
+         setErrorPopup("Please enter both Check-in and Check-out dates.");
+        return;
+    }
+    
+    // 5. Navigation Logic (Only runs if all checks pass)
+    // Sirf city bhejo
+    const cityOnly = location.split(",")[0].trim();
+
+    const query = new URLSearchParams({
+        location: cityOnly,
+        checkIn: finalCheckIn,
+        checkOut: finalCheckOut,
+        adults: adults.toString(),
+        children: children.toString(),
+    }).toString();
+
+    navigate(`/hotellists?${query}`);
+};
   // ✅ Unified Click Handler based on Form State
   const handleButtonClick = () => {
   const token = localStorage.getItem("shineetrip_token");
@@ -249,6 +314,32 @@ useEffect(() => {
     }
     handleViewAllHotels();
   }
+};
+// Destination Card par click handle karne ke liye naya function
+const handleDestinationClick = (destination: Destination) => {
+    // 1. Token check karo (Login zaroori hai)
+    const token = localStorage.getItem("shineetrip_token");
+    if (!token) {
+        setShowLoginPopup(true);
+        return; 
+    }
+
+    // 2. Destination ka naam aur dates prepare karo
+    const destinationName = destination.name.trim();
+    const safeCheckIn = checkIn || getFutureDateString(1); 
+    const safeCheckOut = checkOut || getFutureDateString(2); 
+
+    // 3. Query string banao aur navigate karo
+    const searchQuery = new URLSearchParams({
+        location: destinationName,
+        checkIn: safeCheckIn,
+        checkOut: safeCheckOut,
+        adults: adults.toString(),
+        children: children.toString(),
+    }).toString();
+
+    // /hotellists page par redirect karo
+    navigate(`/hotellists?${searchQuery}`);
 };
 
   const closeSearchWidget = () => {
@@ -595,7 +686,7 @@ useEffect(() => {
                   <div 
                     key={i}
                     className="group cursor-pointer"
-                    onClick={() => navigate(`/hotellists?destination=${dest.name}`)}
+                    onClick={() => handleDestinationClick(dest)}
                   >
                     <div className="relative overflow-hidden rounded-3xl aspect-[4/3.5] mb-2 shadow-sm">
                       <img
