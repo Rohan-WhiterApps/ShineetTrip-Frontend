@@ -53,6 +53,30 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick }: RoomCa
         onMoreInfoClick(roomData);
     }
 
+    // --- NEW HELPER FUNCTION: cleanDescription (Revised for no static fallback) ---
+const cleanDescription = (description: string | null | undefined): string => {
+    if (!description) {
+        return ''; // Agar data hi nahi hai, toh empty string return karo
+    }
+    
+    let cleanedText = String(description);
+    
+    // 1. Saare HTML tags remove karein (e.g., <p>, <div>)
+    cleanedText = cleanedText.replace(/<[^>]*>/g, '');
+    
+    // 2. Specific problematic strings remove karein
+    cleanedText = cleanedText.replace(/jkhsmsvskvynkjykkdckdc/g, ''); 
+    
+    // 3. Literal curly braces aur brackets/fragments remove karein
+    cleanedText = cleanedText.replace(/\{\}/g, '').replace(/<>/g, '');
+    
+    // 4. Multiple spaces ko single space banao aur trim karo
+    cleanedText = cleanedText.replace(/\s\s+/g, ' ').trim();
+    
+    // Agar cleaning ke baad bhi string empty ho jaye, toh empty string return ho jayega.
+    return cleanedText; 
+};
+
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 transition-all hover:shadow-md">
             <div className="flex flex-col lg:flex-row gap-6">
@@ -129,7 +153,7 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick }: RoomCa
 
                         {/* Description */}
                         <p className="text-sm text-gray-600 mb-6 leading-relaxed line-clamp-2 max-w-3xl">
-                            {room.description || room.short_description || 'The rooms have a state-of-the-art design, curated to serve the modern traveler.'}
+                            {cleanDescription(room.description || room.short_description)}
                             {' '}
                             <span 
                                 onClick={(e) => handleMoreInfoClick(e, room)}

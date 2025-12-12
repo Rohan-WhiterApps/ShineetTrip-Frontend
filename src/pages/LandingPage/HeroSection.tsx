@@ -221,6 +221,46 @@ useEffect(() => {
   navigate(`/hotellists?${searchQuery}`);
 };
 
+// --- NEW HELPER FUNCTION TO MANUALLY CHECK JWT EXPIRY (NO LIBRARY NEEDED) ---
+
+const isTokenExpired = (token: string | null): boolean => {
+    if (!token) return true;
+
+    try {
+        // 1. Get the Payload part (second segment)
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            console.error("Token format invalid.");
+            return true; // Invalid format
+        }
+        
+        const payloadBase64 = parts[1];
+
+        // 2. Decode the Base64 string to JSON
+        // Note: For some older browsers or specific encoding issues, 
+        // this might need a polyfill, but usually works in modern browsers.
+        const decodedPayload = atob(payloadBase64);
+        const payload = JSON.parse(decodedPayload);
+
+        // 3. Get expiration time (exp)
+        if (!payload.exp) {
+            console.error("Token missing expiration time.");
+            return true;
+        }
+
+        // 'exp' is usually in seconds. Current time is in milliseconds, so divide by 1000.
+        const currentTimeInSeconds = Date.now() / 1000;
+
+        // Agar expiry time, current time se kam hai, toh expired hai.
+        return payload.exp < currentTimeInSeconds;
+
+    } catch (error) {
+        console.error("Error decoding or parsing token:", error);
+        return true; // Agar koi bhi error aaye, toh expired/invalid maan lo
+    }
+};
+
+// --- END OF HELPER FUNCTION ---
 
 // Helper to extract city from "City, Country"
 const extractCity = (loc: string): string => {
@@ -297,9 +337,20 @@ const handleSearch = () => {
 
     navigate(`/hotellists?${query}`);
 };
+
   // ✅ Unified Click Handler based on Form State
   const handleButtonClick = () => {
   const token = localStorage.getItem("shineetrip_token");
+  if (!token || isTokenExpired(token)) {
+        
+        if (token) {
+             localStorage.removeItem("shineetrip_token"); 
+        }
+        
+        setErrorPopup("Your session has expired. Please log in again to perform a search."); 
+        setShowLoginPopup(true);
+        return;
+    }
   if (isFormFilled) {
     if (!token) {
       setShowLoginPopup(true);
@@ -319,6 +370,18 @@ const handleSearch = () => {
 const handleDestinationClick = (destination: Destination) => {
     // 1. Token check karo (Login zaroori hai)
     const token = localStorage.getItem("shineetrip_token");
+    if (!token || isTokenExpired(token)) {
+        
+        // Agar token expired tha, toh localStorage se hata do
+        if (token) {
+            localStorage.removeItem("shineetrip_token"); 
+        }
+        
+        // Custom error message aur login popup dikhao
+        setErrorPopup("Your session has expired. Please log in again to explore destinations."); 
+        setShowLoginPopup(true);
+        return; 
+    }
     if (!token) {
         setShowLoginPopup(true);
         return; 
