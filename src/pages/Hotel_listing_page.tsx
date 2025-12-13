@@ -9,7 +9,6 @@ import {
   Calendar,
   Search,
   SlidersHorizontal,
-  // X icon yahaan add karein
   X, 
   Wifi,
 } from "lucide-react";
@@ -19,7 +18,7 @@ interface Hotel {
   name: string;
   location: string;
   rating: number;
-  reviews: number;
+  reviewsCount: number;
   images: string[];
   amenities: string[];
   price: number;
@@ -42,7 +41,6 @@ const HotelListingPage: React.FC = () => {
   const navigate = useNavigate();
 
   // ✅ Editable States
-  // FIX 1: Default location ko empty string se initialize kiya
   const [currentLocation, setCurrentLocation] = useState(
     searchParams.get("location") || "" 
   );
@@ -65,10 +63,9 @@ const HotelListingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-const [isSideBarOpen, setIsSideBarOpen] = useState(false);
+  const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
   // API Fetch parameters
-  // FIX 1: Location default "Manali" removed from URL read
   const location = searchParams.get("location") || "";
   const checkIn = searchParams.get("checkIn") || "";
   const checkOut = searchParams.get("checkOut") || "";
@@ -92,11 +89,11 @@ const [isSideBarOpen, setIsSideBarOpen] = useState(false);
       alert("Check-in date cannot be in the past. Please select today or a future date.");
       return;
     }
-   
-    if (currentCheckOut <= currentCheckIn) {
-        alert("Check-out date must be after Check-in date.");
-        return;
-    }
+   
+    if (currentCheckOut <= currentCheckIn) {
+        alert("Check-out date must be after Check-in date.");
+        return;
+    }
 
     const newSearchParams = new URLSearchParams({
       location: currentLocation,
@@ -124,7 +121,6 @@ const [isSideBarOpen, setIsSideBarOpen] = useState(false);
       }
 
       const queryParams = new URLSearchParams();
-      // ✅ FIX 2: Only append location if it has a value, allowing empty search for all hotels
       if (location) queryParams.append("location", location); 
       if (checkIn) queryParams.append("checkIn", checkIn);
       if (checkOut) queryParams.append("checkOut", checkOut);
@@ -142,6 +138,7 @@ const [isSideBarOpen, setIsSideBarOpen] = useState(false);
       });
 
       if (!response.ok) {
+        // Error handling logic remains the same...
         const errorText = await response.text();
         try {
           const errorData = JSON.parse(errorText);
@@ -154,20 +151,44 @@ const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
       const data = await response.json();
 
-      // Transform API data to match our interface
-      const hotelList = (Array.isArray(data) ? data : [])
-        .map((item: any) => {
+      // FIX 1: Map function is now generating an array of Promises for parallel fetching
+      const hotelPromises = (Array.isArray(data) ? data : [])
+        .map(async (item: any) => { 
           const hotel = item.property;
           const roomDetails = item.roomDetails;
 
           if (!hotel) return null;
+          
+          // --- Fetch Dynamic Reviews Data (Individual Hotel) ---
+          // Note: hotel.id is used as propertyId
+          const summaryUrl = `http://46.62.160.188:3000/ratings/average/summary?propertyId=${hotel.id}`;
+          let reviewsCount = 0; // Default to 0 
+          let avgRating = parseFloat(hotel.rating) || 4.2; // Use API rating first
+          
+          try {
+              const reviewResponse = await fetch(summaryUrl, { 
+                  headers: { 'Authorization': `Bearer ${token}` } 
+              });
 
+              if (reviewResponse.ok) {
+                  const reviewData = await reviewResponse.json();
+                  if (reviewData) {
+                      reviewsCount = parseInt(reviewData.totalReviews, 10) || 0; 
+                      // FIX 2: Use fetched average rating if available
+                      avgRating = parseFloat(reviewData.averageRating) || avgRating; 
+                  }
+              }
+          } catch (e) {
+              console.error(`Failed to fetch reviews for hotel ${hotel.id}:`, e);
+          }
+          
           return {
             id: String(hotel.id),
             name: hotel.name || "",
             location: `${hotel.city || ""}, ${hotel.country || ""}`.trim(),
-            rating: parseFloat(hotel.rating) || 4.2,
-            reviews: 6624,
+            // FIX 2: Correctly use the dynamically calculated avgRating
+            rating: avgRating, 
+            reviewsCount: reviewsCount, // Correctly using the dynamic count
             images:
               hotel.images
                 ?.map((img: any) => img.image)
@@ -178,14 +199,18 @@ const [isSideBarOpen, setIsSideBarOpen] = useState(false);
             taxes: parseFloat(roomDetails?.taxAmount || 144),
             description: hotel.short_description || hotel.description || "",
           };
-        })
-        .filter((item): item is Hotel => item !== null);
+        });
+      
+      // FIX 1: Wait for all Promises to resolve (all hotel and review fetches)
+      const resolvedHotelList = await Promise.all(hotelPromises); 
 
-      setHotels(hotelList);
+      const finalHotelList = resolvedHotelList.filter((item): item is Hotel => item !== null);
+
+      setHotels(finalHotelList);
 
       // Initialize selected images
       const initialImages: { [key: number]: number } = {};
-      hotelList.forEach((_: any, index: number) => {
+      finalHotelList.forEach((_: any, index: number) => { // Use finalHotelList for correct index
         initialImages[index] = 0;
       });
       setSelectedImages(initialImages);
@@ -197,44 +222,49 @@ const [isSideBarOpen, setIsSideBarOpen] = useState(false);
     }
   }, [location, checkIn, checkOut, adults, children, navigate]);
 
+
+  // UI Rendering ke pehle, total reviews calculate karein
+  // FIX 1: Variable definition moved here
+  const totalReviewsCount = hotels.reduce((sum, hotel) => sum + hotel.reviewsCount, 0); 
+  
   // API fetch triggers when URL params change
   useEffect(() => {
     fetchHotels();
   }, [fetchHotels]);
 
-  // --------------------------------------------------
+  // --------------------------------------------------
 // Sorting Logic Effect
 // --------------------------------------------------
 useEffect(() => {
-  if (!hotels.length) return;
+  if (!hotels.length) return;
 
-  let sorted = [...hotels];
+  let sorted = [...hotels];
 
-  switch (sortBy) {
-    case "Price- Low to high":
-      sorted.sort((a, b) => a.price - b.price);
-      break;
+  switch (sortBy) {
+    case "Price- Low to high":
+      sorted.sort((a, b) => a.price - b.price);
+      break;
 
-    case "Price- High to low":
-      sorted.sort((a, b) => b.price - a.price);
-      break;
+    case "Price- High to low":
+      sorted.sort((a, b) => b.price - a.price);
+      break;
 
-    case "Best Rated":
-      sorted.sort((a, b) => b.rating - a.rating);
-      break;
+    case "Best Rated":
+      sorted.sort((a, b) => b.rating - a.rating);
+      break;
 
-    case "Lowest Price & Best Rated":
-      sorted.sort((a, b) => {
-        if (a.price === b.price) return b.rating - a.rating;
-        return a.price - b.price;
-      });
-      break;
+    case "Lowest Price & Best Rated":
+      sorted.sort((a, b) => {
+        if (a.price === b.price) return b.rating - a.rating;
+        return a.price - b.price;
+      });
+      break;
 
-    default:
-      break;
-  }
+    default:
+      break;
+  }
 
-  setHotels(sorted);
+  setHotels(sorted);
 }, [sortBy]);
 
 
@@ -264,51 +294,51 @@ useEffect(() => {
     const currentSearchParams = searchParams.toString();
     navigate(`/room-booking/${hotelId}?${currentSearchParams}`);
   };
-  
-  // ===============================================
-  // START NEW LOGIC BLOCK FOR VIEW ALL FIX
-  // ===============================================
-  
-  // Helper to check if location is currently empty or not
-  const isLocationEmpty = currentLocation.trim() === "";
-  
-  // Function to navigate to View All Hotels (No location filter)
-  const handleViewAllHotels = () => {
-    // Server ko satisfy karne ke liye safe dates bhejte hain
-    const safeCheckIn = getTodayDateString(); 
-    const safeCheckOut = getTodayDateString(); 
+  
+  // ===============================================
+  // START NEW LOGIC BLOCK FOR VIEW ALL FIX
+  // ===============================================
+  
+  // Helper to check if location is currently empty or not
+  const isLocationEmpty = currentLocation.trim() === "";
+  
+  // Function to navigate to View All Hotels (No location filter)
+  const handleViewAllHotels = () => {
+    // Server ko satisfy karne ke liye safe dates bhejte hain
+    const safeCheckIn = getTodayDateString(); 
+    const safeCheckOut = getTodayDateString(); 
 
-    const searchQuery = new URLSearchParams({
-        location: '', 
-        checkIn: safeCheckIn,
-        checkOut: safeCheckOut,
-        adults: currentAdults,
-        children: currentChildren,
-    }).toString();
-    
-    // Navigate to the listing page with safe defaults
-    navigate(`/hotellists?${searchQuery}`);
-  };
+    const searchQuery = new URLSearchParams({
+        location: '', 
+        checkIn: safeCheckIn,
+        checkOut: safeCheckOut,
+        adults: currentAdults,
+        children: currentChildren,
+    }).toString();
+    
+    // Navigate to the listing page with safe defaults
+    navigate(`/hotellists?${searchQuery}`);
+  };
 
 
-  const handleSearchClick = () => {
-    const token = localStorage.getItem("shineetrip_token");
-    if (!token) {
-        alert("Please log in to search for hotels.");
-        return;
-    }
+  const handleSearchClick = () => {
+    const token = localStorage.getItem("shineetrip_token");
+    if (!token) {
+        alert("Please log in to search for hotels.");
+        return;
+    }
 
-    // Agar location khali hai, toh View All logic chalao
-    if (isLocationEmpty) {
-        handleViewAllHotels();
-    } else {
-        // Agar location filled hai, toh detailed search chalao (handleSearch)
-        handleSearch();
-    }
-  };
-  // ===============================================
-  // END NEW LOGIC BLOCK
-  // ===============================================
+    // Agar location khali hai, toh View All logic chalao
+    if (isLocationEmpty) {
+        handleViewAllHotels();
+    } else {
+        // Agar location filled hai, toh detailed search chalao (handleSearch)
+        handleSearch();
+    }
+  };
+  // ===============================================
+  // END NEW LOGIC BLOCK
+  // ===============================================
 
 
 const SearchBar = (
@@ -433,6 +463,7 @@ const SearchBar = (
     </div>
 );
 
+
   // --- Rendering UI ---
 
   // Handle Loading State
@@ -446,6 +477,9 @@ const SearchBar = (
       </div>
     );
   }
+  
+  // FIX 1: totalReviewsCount calculation moved before the return/JSX block
+
 
   // Handle No Results State / Error State
   
@@ -459,7 +493,9 @@ const SearchBar = (
           <h1 className="text-2xl font-bold text-gray-900">
             Showing Properties in {location || "All Destinations"}
           </h1>
-          <span className="text-sm text-gray-600">6624 Ratings found</span>
+          <span className="text-sm text-gray-600">
+             {totalReviewsCount.toLocaleString()} Ratings found {/* FIX: Added " Ratings found" text back */}
+          </span> 
         </div>
 
         {/* Hotel Cards - EXACT FIGMA LAYOUT */}
@@ -523,6 +559,23 @@ const SearchBar = (
                         <h2 className="text-xl font-bold text-gray-900 mb-1">
                           {hotel.name}
                         </h2>
+                        {/* FIX 3: ADDED DYNAMIC RATING AND REVIEW COUNT DISPLAY HERE */}
+                        {/* <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                    <Star
+                                        key={i}
+                                        className={`w-4 h-4 ${
+                                            i < Math.round(hotel.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-sm text-gray-700 font-semibold">{hotel.rating.toFixed(1)}</span>
+                            <span className="text-sm text-gray-500">| {hotel.reviewsCount.toLocaleString()} Reviews</span>
+                        </div> */}
+                        {/* END FIX 3 */}
+                        
                         <div className="flex items-center gap-2 text-gray-600 mb-4">
                           <MapPin className="w-4 h-4 text-gray-500" />
                           <span className="text-sm">Mahipalpur | 1.5Km drive to Mall Road</span>

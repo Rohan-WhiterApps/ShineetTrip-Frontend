@@ -7,6 +7,7 @@ import { RoomDetailsModal } from './Rooms_details_page';
 import RoomCard from '../components/ui/RoomCard'; 
 import { AvailabilityCheckModal } from '../components/ui/AvailabilityCheckModal'; 
 import HotelReviews from '../components/ui/HotelReviews'; 
+import { PolicyModal } from '../components/ui/PolicyModal';
 
 
 // Main Component: RoomBookingPage
@@ -23,6 +24,7 @@ export default function RoomBookingPage() {
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<any>(null);
+const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
 
     // NOTE: Ye states ab use nahi honge agar hum direct payment karte hain, 
     // lekin hum inhe declare rakhenge taaki component structure intact rahe.
@@ -60,6 +62,10 @@ export default function RoomBookingPage() {
     const children = searchParams.get("children") || "0";
 
     // --- Handlers (Modal & Booking) ---
+    // Naya Handler function for Policy Modal
+const handleOpenPolicyModal = () => { setIsPolicyModalOpen(true); };
+const handleClosePolicyModal = () => { setIsPolicyModalOpen(false); };
+// ... handleBookNow and other handlers
     const handleOpenModal = (roomData: any) => { setSelectedRoom(roomData); setIsModalOpen(true); };
     const handleCloseModal = () => { setIsModalOpen(false); setSelectedRoom(null); };
     
@@ -301,6 +307,13 @@ export default function RoomBookingPage() {
                         <span>1.5km drive to {hotelData?.address}</span>
                     </div>
                 </div>
+                
+                <button 
+                  onClick={handleOpenPolicyModal}
+                  className="mb-6 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
+                  >
+                  View Hotel Policies & Rules
+                  </button>
 
                 {/* Room Types - Using imported RoomCard */}
                 <div className="mb-8">
@@ -312,6 +325,8 @@ export default function RoomBookingPage() {
                                 hotelImages={hotelImages} 
                                 onMoreInfoClick={handleOpenModal} 
                                 onBookNowClick={handleBookNow} 
+                                // ✅ POLICY HANDLER PASSED
+                                onPolicyClick={handleOpenPolicyModal} 
                             />
                         ))
                     ) : (
@@ -345,6 +360,16 @@ export default function RoomBookingPage() {
                     onProceed={handleProceedToPayment}
                 />
             )}
+            {/* 3. ✅ NEW: Policy Modal Render */}
+            {isPolicyModalOpen && hotelData && (
+                <PolicyModal
+                    isOpen={isPolicyModalOpen}
+                    onClose={handleClosePolicyModal}
+                    hotelName={hotelData.name || 'Selected Property'}
+                    policiesHTML={hotelData.policies || ''}       // Data source: hotelData
+                    refundRulesHTML={hotelData.refundRules || ''} // Data source: hotelData
+                />
+            )}
         </div>
     );
 }
