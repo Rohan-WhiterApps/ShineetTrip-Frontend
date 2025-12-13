@@ -11,6 +11,7 @@ import { FaApple } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 
+
 // Logo components for social login buttons
 const GoogleLogo = () => <FcGoogle size={22} />;
 const FacebookLogo = () => <FaFacebook size={22} color="#1877F2" />;
@@ -19,64 +20,83 @@ const EmailLogo = () => <MdEmail size={22} />;
 
 
 // === CHECK OR CREATE CUSTOMER IN DATABASE (UNCHANGED LOGIC) ===
+// === CHECK OR CREATE CUSTOMER FUNCTION (FIXED 400 ERROR) ===
 const checkOrCreateCustomer = async (user: User, token: string): Promise<number> => {
-  const customerSearchUrl = `http://46.62.160.188:3000/customers?email=${user.email}`;
+    
+    // Search URL: Abhi bhi same rahega
+    const customerSearchUrl = `http://46.62.160.188:3000/customers/0?email=${user.email}`;
+    console.log("Logged in Firebase User Email:", user.email);
 
-  // --- 1. Search for existing customer ---
-  const searchResponse = await fetch(customerSearchUrl, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+    let customerData: any = null;
 
-  if (searchResponse.ok) {
-    const searchData = await searchResponse.json();
-    if (Array.isArray(searchData) && searchData.length > 0 && searchData[0].id) {
-      console.log(`✅ Customer found in DB. ID: ${searchData[0].id}`);
-      return searchData[0].id; 
-    }
-  } else if (searchResponse.status !== 404) {
-      // Log warning if search fails for auth/server error reasons
-      console.warn(`Customer search failed with status: ${searchResponse.status}`);
-  }
+    try {
+        // --- 1. Search for existing customer ---
+        const searchResponse = await fetch(customerSearchUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`, 
+            },
+        });
+
+        if (searchResponse.ok) {
+            customerData = await searchResponse.json(); 
+            
+            if (customerData && customerData.id) {
+                console.log(`✅ Customer found in DB. ID: ${customerData.id}`);
+                return customerData.id; 
+            }
+            
+        } else if (searchResponse.status === 404) {
+            console.log("Customer not found (404). Proceeding to create new one...");
+        } else {
+            console.warn(`Customer search failed with status: ${searchResponse.status}. Check API permissions/token.`);
+        }
+    } catch (e) {
+        console.error("Error during customer search API call:", e);
+    }
 
 
-  // --- 2. If not found, create a new customer record ---
-  console.log("Customer not found. Creating new one...");
-  const customerCreateUrl = `http://46.62.160.188:3000/customers`;
+    // --- 2. If not found, create a new customer record ---
+    console.log("Attempting to create new customer...");
+    const customerCreateUrl = `http://46.62.160.188:3000/customers`;
 
-  const createPayload = {
-    social_title: user.displayName ? (user.displayName.startsWith("Mr") ? "Mr." : "Ms.") : "Ms.",
-    first_name: user.displayName?.split(' ')[0] || "Guest",
-    last_name: user.displayName?.split(' ').slice(1).join(' ') || "User",
-    email: user.email,
-    phone: "", 
-    firebase_uid: user.uid,
-    enabled: true,
-    default_group: 1
-  };
+    const createPayload = {
+        social_title: user.displayName ? (user.displayName.startsWith("Mr") ? "Mr." : "Ms.") : "Ms.",
+        first_name: user.displayName?.split(' ')[0] || "Guest",
+        last_name: user.displayName?.split(' ').slice(1).join(' ') || "User",
+        email: user.email,
+        phone: "", 
+        // 🚨 FIX: Add a unique placeholder password using Firebase UID 
+        password: `FB_LOGIN_${user.uid}_TEMP`, 
+        // Agar backend ko 'dob' (Date of Birth) bhi chahiye, toh yahan ek dummy value daalni padegi.
+        // Agar dob mandatory hai aur error aata hai, toh is line ko uncomment kar dena:
+        // dob: "1900-01-01", 
+        firebase_uid: user.uid,
+        enabled: true,
+        default_group: 3
+    };
 
-  const createResponse = await fetch(customerCreateUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(createPayload),
-  });
+    const createResponse = await fetch(customerCreateUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(createPayload),
+    });
 
-  if (!createResponse.ok) {
-    const err = await createResponse.text();
-    console.error("❌ Failed to create customer:", err);
-    // Error is due to 403 Forbidden because POST /customers requires elevated role
-    throw new Error("Could not register user in database.");
-  }
+    if (!createResponse.ok) {
+        const err = await createResponse.text();
+        console.error("❌ Failed to create customer:", err);
+        
+        // Agar alert mein sirf yehi message aata hai, toh check karein ki dob mandatory toh nahi hai.
+        throw new Error("Could not register user in database.");
+    }
 
-  const createdData = await createResponse.json();
-  console.log(`✅ Customer created. DB ID: ${createdData.id}`);
-  return createdData.id;
+    const createdData = await createResponse.json();
+    console.log(`✅ Customer created. DB ID: ${createdData.id}`);
+    return createdData.id;
 };
 
 interface LoginModalProps {
