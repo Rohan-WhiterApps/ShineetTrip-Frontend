@@ -203,6 +203,9 @@ const getShortDescription = (text: string, limit = 120) => {
                     {/* Pricing Options (Matches Figma Boxes) */}
                     <div className="pt-5 border-t border-dashed border-gray-200">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+
+  
                             
                             {/* Option 1: Highlighted (Active Plan) */}
                             <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] rounded-xl p-4 relative h-full min-h-[120px]">
