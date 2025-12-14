@@ -27,6 +27,20 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick, onPolicy
     const roomImages = hotelImages && hotelImages.length > 0 ? hotelImages : ['https://placehold.co/600x400?text=No+Image'];
     
     // Helper for carousel navigation (stops propagation)
+
+const getShortDescription = (text: string, limit = 120) => {
+  if (!text) return { short: '', isLong: false };
+
+  if (text.length <= limit) {
+    return { short: text, isLong: false };
+  }
+
+  return {
+    short: text.slice(0, limit) + '...',
+    isLong: true
+  };
+};
+
     const goToPrevious = (e: React.MouseEvent) => {
         e.stopPropagation();
         // ❌ FIX 1 APPLIED: Removed accidental onPolicyClick() call from image navigation
@@ -162,16 +176,28 @@ const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick, onPolicy
                         </div>
 
                         {/* Description */}
-                        <p className="text-sm text-gray-600 mb-6 leading-relaxed line-clamp-2 max-w-3xl">
-                            {cleanDescription(room.description || room.short_description)}
-                            {' '}
-                            <span 
-                                onClick={(e) => handleMoreInfoClick(e, room)}
-                                className="text-[#D2A256] cursor-pointer hover:underline font-medium"
-                            >
-                                more info
-                            </span>
-                        </p>
+                        {(() => {
+  const fullText = cleanDescription(room.description || room.short_description);
+  const { short, isLong } = getShortDescription(fullText);
+
+  return (
+    <p className="text-sm text-gray-600 mb-6 leading-relaxed max-w-3xl">
+      {short}
+      {isLong && (
+        <>
+          {' '}
+          <span
+            onClick={(e) => handleMoreInfoClick(e, room)}
+            className="text-[#D2A256] cursor-pointer hover:underline font-medium"
+          >
+            more info
+          </span>
+        </>
+      )}
+    </p>
+  );
+})()}
+
                     </div>
 
                     {/* Pricing Options (Matches Figma Boxes) */}
