@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, X, Phone, Mail, Award, Shield, Clock, Edit2, Loader2 } from 'lucide-react';
-import { useSearchParams, useNavigate } from 'react-router-dom'; // ✅ FIX 1: useNavigate import kiya
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom'; // ✅ FIX 1: useNavigate import kiya
 import BookingSuccessCard from '../components/ui/BookingSuccessCard'; // ✅ NEW: Success Card Import
 
 // Define global Razorpay object for TypeScript compiler
@@ -46,6 +46,7 @@ const BookingPage: React.FC = () => {
 
     const navigate = useNavigate(); // ✅ FIX 2: useNavigate hook use kiya
     const [searchParams] = useSearchParams();
+    const { propertyId } = useParams<{ propertyId: string }>();
     const retailPriceStr = searchParams.get('retailPrice') || '0';
     const taxPriceStr = searchParams.get('taxPrice') || '0';
     const roomName = searchParams.get('roomName') || 'Deluxe Room';
@@ -55,8 +56,8 @@ const BookingPage: React.FC = () => {
 
     const retailPrice = parseFloat(retailPriceStr);
     const taxPrice = parseFloat(taxPriceStr);
-    const finalTotal = taxPrice; 
-    const propertyId = searchParams.get('propertyId') || '1'; 
+    const finalTotal = retailPrice + taxPrice;
+
 
     const token = localStorage.getItem('shineetrip_token');
     const customerIdStr = localStorage.getItem('shineetrip_db_customer_id') || '1'; // Using db customer ID
@@ -172,6 +173,22 @@ if (finalTotal <= 0) {
         setPaymentMessage('Invalid total price for booking.');
         return;
     }
+
+    // Ensure propertyId exists before attempting conversion
+        if (!propertyId) {
+            setPaymentMessage('Error: Missing property information in URL. Please go back and select a property.');
+            setIsProcessing(false);
+            return; // Stop execution if missing
+        }
+        
+        // Convert to Int and check if it's a valid ID (> 0)
+        const propertyIdInt = parseInt(propertyId) || 0;
+
+        if (propertyIdInt <= 0) {
+            setPaymentMessage('Error: Invalid property ID provided.');
+            setIsProcessing(false);
+            return; // Stop execution if invalid ID
+        }
         
         setIsProcessing(true);
         const amountInPaise = Math.round(finalTotal * 100);
@@ -185,7 +202,7 @@ if (finalTotal <= 0) {
             const createOrderPayload = {
                 orderRooms: [
                     {
-                        propertyId: parseInt(propertyId),
+                        propertyId: propertyIdInt,
                         roomTypeId: parseInt(roomId),
                         adults: parseInt(searchParams.get('adults') || '2'),
                         children: parseInt(searchParams.get('children') || '0'),

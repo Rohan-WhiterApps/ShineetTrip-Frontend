@@ -1,28 +1,97 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, MapPin, Loader2, LogOut, Edit3, Heart, ShoppingBag } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Loader2, LogOut, Edit3, Briefcase, Calendar, MessageSquare, Globe, Heart, ShoppingBag, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Interface for Customer Data (Jo hum backend se expect karte hain)
+// Interface for Customer Data (Based on new Swagger's GET /customers/{id})
 interface CustomerData {
     id: number;
+    social_title?: string;
     first_name: string;
     last_name: string;
     email: string;
     phone: string;
+    dob: string; // Date of Birth (from Swagger)
     address?: string; 
-    firebase_uid: string;
+    
+    // NOTE: Work Title aur Language ke liye fallback use karenge, kyunki woh customer schema mein nahi hain.
+    work_title?: string;
+    language?: string;
+
+    // Data jo hum Orders se extract karenge
+    carts: any[]; // Cart details
+    orders: Order[]; // Order details for bookings
 }
+
+interface Order {
+    id: number;
+    status: string;
+    orderRooms: OrderRoom[];
+    totalPrice: number;
+    currency: string;
+}
+
+interface OrderRoom {
+    id: number;
+    checkIn: string;
+    checkOut: string;
+    adults: number; 
+    children: number;
+    property: {
+        name: string;
+        city: string;
+        images: { image: string }[];
+    };
+}
+
+// ------------------------------------------------
+// Helper: Date Format
+// ------------------------------------------------
+const formatDateForInput = (dateString?: string): string => {
+    if (!dateString || dateString === 'N/A') return '';
+    try {
+        // Assume DOB is YYYY-MM-DD or convertible to it (e.g., "1995-05-10T...")
+        // We ensure it gets normalized to YYYY-MM-DD for the input[type=date]
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString; 
+        
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    } catch {
+        return '';
+    }
+};
+
+const formatDisplayDate = (dateString?: string): string => {
+    if (!dateString) return 'N/A';
+    try {
+        // Assuming DOB is YYYY-MM-DD (e.g., 1995-05-10)
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            // Converts YYYY-MM-DD to DD-MM-YYYY (Example display format)
+            return `${parts[2]}-${parts[1]}-${parts[0]}`; 
+        }
+        return dateString;
+    } catch {
+        return dateString;
+    }
+};
 
 const CustomerProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const [customer, setCustomer] = useState<CustomerData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Fetch karne ke liye hum Customer ID aur Token Local Storage se lenge
+    const [isEditMode, setIsEditMode] = useState(false); 
+    const [formState, setFormState] = useState<Partial<CustomerData>>({});
+    
     const customerDbId = localStorage.getItem('shineetrip_db_customer_id');
     const token = localStorage.getItem('shineetrip_token');
-
+    
+    // ------------------------------------------------
+    // 1. GET By ID Logic: Fetch Customer Data and Orders
+    // ------------------------------------------------
     const fetchProfileData = useCallback(async () => {
         if (!customerDbId || !token) {
             setError("Authorization required. Please log in.");
@@ -34,9 +103,8 @@ const CustomerProfilePage: React.FC = () => {
         setError(null);
 
         try {
-            // API call to fetch customer details by ID
+            // Using the correct endpoint from new Swagger: /customers/{id}
             const apiUrl = `http://46.62.160.188:3000/customers/${customerDbId}`;
-
             const response = await fetch(apiUrl, {
                 method: "GET",
                 headers: {
@@ -46,13 +114,37 @@ const CustomerProfilePage: React.FC = () => {
             });
 
             if (!response.ok) {
-                // If token is invalid or user not found, log out
-                handleLogout();
-                throw new Error("Failed to fetch profile. Session expired.");
+                if (response.status === 401 || response.status === 403) {
+                     handleLogout();
+                }
+                throw new Error("Failed to fetch profile. Session expired or access denied.");
             }
 
-            const data = await response.json();
-            setCustomer(data as CustomerData);
+            const data: CustomerData = await response.json();
+            
+            // Normalize DOB from Swagger to a user-friendly format for display
+            const normalizedData: CustomerData = {
+                ...data,
+                // dob (date of birth) from Swagger is mapped
+                dob: data.dob || 'N/A', 
+                // Using fallbacks for non-schema fields
+                work_title: data.work_title || "Travel Enthusiast",
+                language: data.language || "Hindi, English",
+            };
+            
+            setCustomer(normalizedData);
+            setFormState({
+                // Initialize form state with fields meant for editing/patching
+                first_name: normalizedData.first_name,
+                last_name: normalizedData.last_name,
+                email: normalizedData.email,
+                phone: normalizedData.phone,
+                dob: normalizedData.dob, // Send DOB to form state
+                // Address/Work/Language yahan par nahi hai, to manually add kar dete hain agar backend support karta hai
+                address: normalizedData.address || '',
+                work_title: normalizedData.work_title || '',
+                language: normalizedData.language || '',
+            });
 
         } catch (err) {
             console.error("Profile fetch error:", err);
@@ -66,19 +158,85 @@ const CustomerProfilePage: React.FC = () => {
         fetchProfileData();
     }, [fetchProfileData]);
     
-    // --- Handlers ---
-    const handleLogout = () => {
-        localStorage.removeItem('shineetrip_token');
-        localStorage.removeItem('shineetrip_uid');
-        localStorage.removeItem('shineetrip_db_customer_id');
-        localStorage.removeItem('shineetrip_name');
-        localStorage.removeItem('shineetrip_email');
-        navigate('/'); // Redirect to home page
-    };
-    
-    // --- UI RENDER ---
+    // ------------------------------------------------
+    // 2. PATCH Logic: Update Customer Data
+    // ------------------------------------------------
+    const handleSaveProfile = async () => {
+        if (!customerDbId || !token || !customer) return;
+        
+        setLoading(true);
+        setError(null);
+        
+        try {
+            // Endpoint: PATCH /customers/{id}
+            const apiUrl = `http://46.62.160.188:3000/customers/${customerDbId}`;
+            
+            // 💡 FIX 1: Sirf woh fields bhejo jo Swagger PATCH schema mein allowed hain.
+            // DOB ko same format mein bhejna zaroori hai jo backend accept karta hai.
+            const payload: Partial<CustomerData> = {
+                first_name: formState.first_name,
+                last_name: formState.last_name,
+                email: formState.email, 
+                phone: formState.phone,
+                dob: formState.dob, // Send the date as it is in state (YYYY-MM-DD from input)
+                // NOTE: Address, work_title, language ko backend support karta hai toh unko bhi bhejo
+                address: formState.address,
+                // work_title: formState.work_title, 
+                // language: formState.language, 
+            };
+            
+            const response = await fetch(apiUrl, {
+                method: "PATCH", 
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
 
+            if (!response.ok) {
+                const errorBody = await response.json();
+                throw new Error(errorBody.message || "Failed to update profile.");
+            }
+
+            await fetchProfileData(); 
+            setIsEditMode(false);
+            alert("Profile updated successfully!");
+
+        } catch (err) {
+            console.error("Profile update error:", err);
+            setError(err instanceof Error ? err.message : 'Failed to update profile.');
+            setLoading(false);
+        }
+    };
+
+    // --- Utility Handlers ---
+    const handleLogout = () => {
+        localStorage.clear(); 
+        navigate('/'); 
+    };
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormState(prev => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const toggleEditMode = () => {
+        if (isEditMode) {
+            // Agar cancel kiya toh original data se reset karein
+            setFormState(customer || {});
+        }
+        setIsEditMode(!isEditMode);
+    };
+
+    // ------------------------------------------------
+    // 3. Data Extraction and UI Render
+    // ------------------------------------------------
     if (loading) {
+        // ... (Loading UI) ...
         return (
             <div className="min-h-screen pt-28 flex items-center justify-center bg-gray-50">
                 <Loader2 className="w-8 h-8 animate-spin text-[#D2A256]" />
@@ -88,9 +246,9 @@ const CustomerProfilePage: React.FC = () => {
     }
 
     if (error || !customer) {
-        // ... (Error UI remains same for clarity) ...
+        // ... (Error UI) ...
         return (
-            <div className="min-h-screen pt-28  flex flex-col items-center justify-center text-center bg-gray-50">
+            <div className="min-h-screen pt-28 flex flex-col items-center justify-center text-center bg-gray-50">
                 <p className="text-red-600 mb-4">{error || "Could not load user profile. Please log in again."}</p>
                 <button onClick={handleLogout} className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors">
                     <LogOut className="w-4 h-4 inline mr-2" /> Log Out
@@ -98,80 +256,164 @@ const CustomerProfilePage: React.FC = () => {
             </div>
         );
     }
+    
+    const fullName = `${customer.first_name} ${customer.last_name}`;
+    
+    // 💡 FIX 2: Dynamic Booking Data Extraction
+    const activeBookings = customer.orders
+        ?.flatMap(order => order.orderRooms)
+        .filter(room => room.property && room.property.name) // Only valid rooms
+        .map(room => ({
+            id: room.id,
+            destination: `${room.property.name}, ${room.property.city}`,
+            count: (room.adults || 0) + (room.children || 0), // Combining adults and children as count
+            image_url: room.property.images?.[0]?.image || "https://placehold.co/180x100/A0A0A0/444444?text=Trip+Image"
+        })) || [];
+
 
     // --- Profile Display ---
     return (
-        <div className="min-h-screen bg-gray-50 font-opensans pt-28 pb-12">
-            <div className="max-w-3xl mt-32 mx-auto px-4">
+        <div className="min-h-screen bg-gray-50 font-opensans pt-24 pb-12">
+            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
                 
-                {/* Header Section */}
-                <div className="flex justify-between items-center mb-10 border-b pb-4">
-                    <h1 className="text-3xl font-extrabold text-gray-900">
-                        {customer.first_name}'s Profile
-                    </h1>
-                    {/* <button className="bg-[#D2A256] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#c2934b] transition-colors shadow-md">
-                        <Edit3 className="w-4 h-4 inline mr-1" /> Edit Profile
-                    </button> */}
-                </div>
-                
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    
-                    {/* Column 1: Navigation/Quick Actions */}
-                    <div className="md:col-span-1 space-y-4">
+                {/* Column 1: Sidebar (Design Maintained) */}
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                        <h3 className="text-xl font-extrabold text-gray-900 mb-4 border-b pb-2">Profile</h3>
                         
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-2">
-                            <h3 className="font-bold text-lg text-gray-900 mb-2">Account</h3>
-                            
-                            <ProfileNavItem icon={User} label="Personal Details" active={true} />
-                            <ProfileNavItem icon={ShoppingBag} label="Booking History" />
-                            <ProfileNavItem icon={Heart} label="Wishlist/Favorites" />
+                        <div className="space-y-1">
+                            <ProfileNavItem icon={User} label="About me" active={true} />
+                            <ProfileNavItem icon={ShoppingBag} label="My booking" active={false} />
                         </div>
-                        
-                        {/* Logout Button (Moved here for better flow) */}
-                        <button onClick={handleLogout} className="w-full bg-red-600 text-white px-4 py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center shadow-md">
-                            <LogOut className="w-5 h-5 inline mr-2" /> Log Out
-                        </button>
-                        
                     </div>
                     
-                    {/* Column 2/3: Profile Details */}
-                    <div className="md:col-span-2 space-y-6">
+                    {/* Logout Button in sidebar style */}
+                    <button onClick={handleLogout} className="w-full bg-red-600 text-white px-4 py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center shadow-md">
+                        <LogOut className="w-5 h-5 inline mr-2" /> Log Out
+                    </button>
+                </div>
+                
+                {/* Column 2: Main Content */}
+                <div className="lg:col-span-3 space-y-8">
+                    
+                    {/* 1. About Me Header & Details */}
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                        <div className="flex justify-between items-center mb-6 border-b pb-4">
+                            <h2 className="text-2xl font-extrabold text-gray-900">About me</h2>
+                            <button 
+                                onClick={toggleEditMode} 
+                                className={`text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-md flex items-center ${
+                                    isEditMode ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-800 hover:bg-black'
+                                }`}
+                            >
+                                {isEditMode ? (<><X className="w-4 h-4 inline mr-1" /> Cancel</>) : (<><Edit3 className="w-4 h-4 inline mr-1" /> Edit</>)}
+                            </button>
+                        </div>
                         
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 space-y-6">
-                            <h3 className="text-xl font-bold text-gray-900 border-b pb-3 mb-4">Personal Information</h3>
+                        <div className="flex items-start gap-6"> 
                             
-                            {/* Data Fields Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
+                            {/* Personal Details Grid (Dynamic/Editable) */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-8 flex-grow">
                                 
-                                <ProfileDataField icon={User} label="Name" value={`${customer.first_name} ${customer.last_name}`} color="#D2A256" />
-                                <ProfileDataField icon={Mail} label="Email Address" value={customer.email} color="#3B82F6" />
-                                <ProfileDataField icon={Phone} label="Phone Number" value={customer.phone || "Not provided"} color="#10B981" />
-                                
-                                {customer.address && (
-                                    <ProfileDataField icon={MapPin} label="Address" value={customer.address} color="#EF4444" />
+                                {isEditMode ? (
+                                    <>
+                                        <ProfileEditField label="First Name" name="first_name" value={formState.first_name || ''} onChange={handleFormChange} />
+                                        <ProfileEditField label="Last Name" name="last_name" value={formState.last_name || ''} onChange={handleFormChange} />
+                                        <ProfileEditField label="Work Title" name="work_title" value={formState.work_title || ''} onChange={handleFormChange} />
+                                        <ProfileEditField 
+                                            label="Birthdate (YYYY-MM-DD)" 
+                                            name="dob" // Changed name to 'dob' based on Swagger
+                                            value={formatDateForInput(formState.dob)} 
+                                            onChange={handleFormChange} 
+                                            type="date"
+                                        />
+                                        <ProfileEditField label="Language" name="language" value={formState.language || ''} onChange={handleFormChange} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <ProfileDetailPill icon={Briefcase} label="My Work" value={customer.work_title || 'N/A'} />
+                                        <ProfileDetailPill icon={Calendar} label="Birthdate" value={formatDisplayDate(customer.dob)} />
+                                        <ProfileDetailPill icon={Globe} label="Language" value={customer.language || 'N/A'} />
+                                    </>
                                 )}
-                                
                             </div>
-                            
-                            <div className="border-t pt-4 text-sm text-gray-500">
-                                <p>Customer ID: <span className="font-medium text-gray-800">{customer.id}</span></p>
-                            </div>
-                            
                         </div>
+                        
+                        {/* Save Button for Edit Mode */}
+                        {isEditMode && (
+                            <div className="mt-6 text-right border-t pt-4">
+                                <button
+                                    onClick={handleSaveProfile}
+                                    className="bg-[#D2A256] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#c2934b] transition-colors"
+                                    disabled={loading} 
+                                >
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin inline mr-1" /> : <Edit3 className="w-4 h-4 inline mr-1" />}
+                                    {loading ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        )}
 
+                        {/* Contact Details (Always Visible) */}
+                        <div className={`mt-6 pt-4 ${isEditMode ? 'opacity-50 pointer-events-none' : 'border-t'}`}>
+                            <ProfileDataField icon={User} label="Full Name" value={fullName} color="#D2A256" />
+                            <ProfileDataField icon={Mail} label="Email Address" value={customer.email} color="#3B82F6" />
+                            <ProfileDataField icon={Phone} label="Phone Number" value={customer.phone || "Not provided"} color="#10B981" />
+                            {/* NOTE: Address field is optional in Swagger, keeping it in helper for display */}
+                            <ProfileDataField icon={MapPin} label="Address" value={customer.address || "Not provided"} color="#6B7280" />
+                        </div>
+                        
                     </div>
+                    
+                    {/* 2. My Bookings Section (Dynamic) */}
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 space-y-6">
+                        <h2 className="text-2xl font-extrabold text-gray-900 mb-6 border-b pb-4">My Bookings</h2>
+                        
+                        {activeBookings.length > 0 ? (
+                            <div className="flex overflow-x-auto gap-4 pb-4">
+                                {/* Dynamic Booking Cards */}
+                                {activeBookings.map((booking) => (
+                                    <BookingCard 
+                                        key={booking.id}
+                                        destination={booking.destination}
+                                        count={booking.count}
+                                        image_url={booking.image_url} checkIn={''} checkOut={''}                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            // 💡 FIX 2: Dynamic "No Booking" message
+                            <div className="text-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                <ShoppingBag className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600 font-semibold">No Bookings Found Yet</p>
+                                <p className="text-sm text-gray-500">Book your first trip to see it here!</p>
+                            </div>
+                        )}
+
+                        {/* Static Reviews/Testimonials (Design maintained) */}
+                        {/* <h2 className="text-xl font-bold text-gray-900 mb-4 border-t pt-6">What people are saying</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {Array.from({ length: 3 }).map((_, index) => (
+                                <ReviewSnippet key={index} />
+                            ))}
+                        </div>
+                        <div className="text-center mt-6">
+                            <button className="bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
+                                Show all 6 Reviews
+                            </button>
+                        </div> */}
+                    </div>
+                    
                 </div>
+                
             </div>
         </div>
     );
 };
 
-// --- Helper Components for Clean Code and Consistent Design ---
+// --- Helper Components ---
 
-// Reusable Component for Data Fields
+// Reusable Component for Data Fields (like Name, Email, Phone)
 const ProfileDataField: React.FC<{ icon: React.ElementType, label: string, value: string, color: string }> = ({ icon: Icon, label, value, color }) => (
-    <div className="space-y-1">
+    <div className="space-y-1 my-3">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
         <div className="flex items-center space-x-2">
             <Icon className="w-4 h-4" style={{ color: color }} />
@@ -191,5 +433,63 @@ const ProfileNavItem: React.FC<{ icon: React.ElementType, label: string, active?
         <span className="font-medium text-sm">{label}</span>
     </button>
 );
+
+// Component for My Work, Birthdate, Language pills
+const ProfileDetailPill: React.FC<{ icon: React.ElementType, label: string, value: string }> = ({ icon: Icon, label, value }) => (
+    <div className="space-y-1">
+        <div className="flex items-center gap-2 text-gray-700">
+            <Icon className="w-5 h-5 text-[#D2A256]" />
+            <span className="text-sm font-semibold">{label}</span>
+        </div>
+        <p className="text-lg font-bold text-gray-900 ml-7">{value}</p>
+    </div>
+);
+
+// NEW: Component for editable fields in Edit Mode
+const ProfileEditField: React.FC<{ label: string, name: keyof CustomerData, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, type?: string }> = ({ label, name, value, onChange, type = 'text' }) => (
+    <div className="space-y-1">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
+        <input
+            type={type}
+            name={name as string}
+            value={value}
+            onChange={onChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-medium focus:border-[#D2A256] focus:ring-1 focus:ring-[#D2A256] transition-colors"
+        />
+    </div>
+);
+
+
+// Dynamic Booking Card Component
+const BookingCard: React.FC<Pick<OrderRoom, 'checkIn' | 'checkOut'> & { destination: string, count: number, image_url: string }> = ({ destination, count, image_url }) => (
+    <div className="flex-shrink-0 w-[180px] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow">
+        <img 
+            src={image_url} 
+            alt={destination} 
+            className="h-[100px] w-full object-cover" 
+        />
+        <div className="p-3">
+            <p className="font-bold text-base text-gray-900">{destination}</p>
+            <p className="text-xs text-gray-500">{count} Guest{count > 1 ? 's' : ''}</p>
+        </div>
+    </div>
+);
+
+// Static Placeholder for Review Snippet (Unchanged)
+// const ReviewSnippet: React.FC = () => (
+//     <div className="bg-gray-100 rounded-xl p-4 space-y-2 border border-gray-200">
+//         <div className="flex items-center gap-3">
+//             <User className="w-10 h-10 rounded-full bg-gray-300 p-1" />
+//             <div>
+//                 <p className="font-bold text-sm">Vasithha</p>
+//                 <p className="text-xs text-gray-500">Darjeeling, India</p>
+//             </div>
+//         </div>
+//         <p className="text-xs text-gray-600 italic line-clamp-3">
+//             It has been a pleasure hosting them. We hope they had a good time and a good stary in Darjeeling.
+//         </p>
+//         <p className="text-[10px] text-gray-400">July 2025</p>
+//     </div>
+// );
 
 export default CustomerProfilePage;
