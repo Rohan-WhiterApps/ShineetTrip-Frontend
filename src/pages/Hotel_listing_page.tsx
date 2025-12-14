@@ -63,7 +63,12 @@ const HotelListingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [isSideBarOpen, setIsSideBarOpen] = useState(false);
+  const [isSideBarOpen, setIsSideBarOpen] = useState(false);
+    
+  // 💡 PAGINATION STATES:
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false); 
+  const limit = 10 // API limit set kar diya
 
   // API Fetch parameters
   const location = searchParams.get("location") || "";
@@ -106,10 +111,13 @@ const HotelListingPage: React.FC = () => {
     navigate(`/hotellists?${newSearchParams}`);
   };
 
-  // ✅ Fetching logic
+// ----------------------------------------------------------------------
+// 🔄 Function 1: fetchHotels - INITIAL SEARCH (Page 1 Only - Overwrite)
+// ----------------------------------------------------------------------
   const fetchHotels = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
+    setPage(1); // Page reset here
 
     try {
       const token = localStorage.getItem("shineetrip_token");
@@ -121,13 +129,17 @@ const HotelListingPage: React.FC = () => {
       }
 
       const queryParams = new URLSearchParams();
-      if (location) queryParams.append("location", location); 
+      if (location) queryParams.append("city", location); 
       if (checkIn) queryParams.append("checkIn", checkIn);
       if (checkOut) queryParams.append("checkOut", checkOut);
       if (adults) queryParams.append("adults", adults);
       if (children) queryParams.append("children", children);
 
-      const apiUrl = `http://46.62.160.188:3000/search/hotels?${queryParams.toString()}`;
+      // Page 1 aur Limit set kiya
+      queryParams.append("page", '1'); 
+      queryParams.append("limit", limit.toString());
+
+      const apiUrl = `http://46.62.160.188:3000/properties/search?${queryParams.toString()}`;
 
       const response = await fetch(apiUrl, {
         method: "GET",
@@ -138,7 +150,6 @@ const HotelListingPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        // Error handling logic remains the same...
         const errorText = await response.text();
         try {
           const errorData = JSON.parse(errorText);
@@ -149,21 +160,23 @@ const HotelListingPage: React.FC = () => {
         throw new Error(`Failed to fetch hotels: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const responseData = await response.json(); 
+      const data = responseData.data || [];
+      const meta = responseData.meta || {}; // Meta data fetch kiya
 
       // FIX 1: Map function is now generating an array of Promises for parallel fetching
       const hotelPromises = (Array.isArray(data) ? data : [])
         .map(async (item: any) => { 
-          const hotel = item.property;
-          const roomDetails = item.roomDetails;
+           const hotel = item;
+                const roomType = hotel.roomTypes && hotel.roomTypes.length > 0 ? hotel.roomTypes[0] : null;
+                const roomDetails = roomType?.price;
 
-          if (!hotel) return null;
+                if (!roomDetails) return null;
           
           // --- Fetch Dynamic Reviews Data (Individual Hotel) ---
-          // Note: hotel.id is used as propertyId
           const summaryUrl = `http://46.62.160.188:3000/ratings/average/summary?propertyId=${hotel.id}`;
-          let reviewsCount = 0; // Default to 0 
-          let avgRating = parseFloat(hotel.rating) || 4.2; // Use API rating first
+          let reviewsCount = 0; 
+          let avgRating = parseFloat(hotel.rating) || 4.2; 
           
           try {
               const reviewResponse = await fetch(summaryUrl, { 
@@ -174,7 +187,6 @@ const HotelListingPage: React.FC = () => {
                   const reviewData = await reviewResponse.json();
                   if (reviewData) {
                       reviewsCount = parseInt(reviewData.totalReviews, 10) || 0; 
-                      // FIX 2: Use fetched average rating if available
                       avgRating = parseFloat(reviewData.averageRating) || avgRating; 
                   }
               }
@@ -186,15 +198,14 @@ const HotelListingPage: React.FC = () => {
             id: String(hotel.id),
             name: hotel.name || "",
             location: `${hotel.city || ""}, ${hotel.country || ""}`.trim(),
-            // FIX 2: Correctly use the dynamically calculated avgRating
             rating: avgRating, 
-            reviewsCount: reviewsCount, // Correctly using the dynamic count
+            reviewsCount: reviewsCount, 
             images:
               hotel.images
                 ?.map((img: any) => img.image)
                 .filter((url: string | null) => url && typeof url === "string") || [],
             amenities: hotel.selectedFeatures?.map((f: any) => f.name) || ["Gym", "Restaurant"],
-            price: parseFloat(roomDetails?.retailPrice || 8999),
+            price: parseFloat(roomDetails.retail_price || 8999),
             originalPrice: parseFloat(roomDetails?.totalPricePerNight || 8999),
             taxes: parseFloat(roomDetails?.taxAmount || 144),
             description: hotel.short_description || hotel.description || "",
@@ -206,11 +217,12 @@ const HotelListingPage: React.FC = () => {
 
       const finalHotelList = resolvedHotelList.filter((item): item is Hotel => item !== null);
 
-      setHotels(finalHotelList);
+      setHotels(finalHotelList); // Overwrite old data
+      setHasMore(meta.hasNextPage || false); // HasMore set kiya
 
       // Initialize selected images
       const initialImages: { [key: number]: number } = {};
-      finalHotelList.forEach((_: any, index: number) => { // Use finalHotelList for correct index
+      finalHotelList.forEach((_: any, index: number) => { 
         initialImages[index] = 0;
       });
       setSelectedImages(initialImages);
@@ -220,22 +232,141 @@ const HotelListingPage: React.FC = () => {
       setLoading(false);
       setHasSearched(true);
     }
-  }, [location, checkIn, checkOut, adults, children, navigate]);
+  }, [location, checkIn, checkOut, adults, children, navigate, limit]);
 
+
+// ----------------------------------------------------------------------
+// ➕ Function 2: fetchMoreHotels - LOAD MORE (Separate function, NOT useCallback)
+// ----------------------------------------------------------------------
+const fetchMoreHotels = async (nextPage: number) => {
+    setLoading(true);
+
+    try {
+        const token = localStorage.getItem("shineetrip_token");
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+
+        const queryParams = new URLSearchParams();
+        if (location) queryParams.append("city", location);
+        if (checkIn) queryParams.append("checkIn", checkIn);
+        if (checkOut) queryParams.append("checkOut", checkOut);
+        if (adults) queryParams.append("adults", adults);
+        if (children) queryParams.append("children", children);
+        
+        // Next Page aur Limit set karna
+        queryParams.append("page", nextPage.toString()); 
+        queryParams.append("limit", limit.toString());
+
+        const apiUrl = `http://46.62.160.188:3000/properties/search?${queryParams.toString()}`;
+        
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+            console.error("Failed to fetch more hotels:", response.status);
+            setLoading(false);
+            return;
+        }
+
+        const responseData = await response.json(); 
+        const data = responseData.data || [];
+        const meta = responseData.meta || {};
+
+        // Mapping logic ko reuse karna (review fetching same rahega)
+        const hotelPromises = (Array.isArray(data) ? data : [])
+            .map(async (item: any) => { 
+                const hotel = item;
+                const roomType = hotel.roomTypes && hotel.roomTypes.length > 0 ? hotel.roomTypes[0] : null;
+                const roomDetails = roomType?.price;
+
+                if (!roomDetails) return null;
+                // --- Review fetching logic (same as in fetchHotels) ---
+                const summaryUrl = `http://46.62.160.188:3000/ratings/average/summary?propertyId=${hotel.id}`;
+                let reviewsCount = 0; 
+                let avgRating = parseFloat(hotel.rating) || 4.2; 
+                
+                try {
+                    const reviewResponse = await fetch(summaryUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (reviewResponse.ok) {
+                        const reviewData = await reviewResponse.json();
+                        if (reviewData) {
+                            reviewsCount = parseInt(reviewData.totalReviews, 10) || 0; 
+                            avgRating = parseFloat(reviewData.averageRating) || avgRating; 
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Failed to fetch reviews for hotel ${hotel.id}:`, e);
+                }
+                
+                return {
+                    id: String(hotel.id),
+                    name: hotel.name || "",
+                    location: `${hotel.city || ""}, ${hotel.country || ""}`.trim(),
+                    rating: avgRating, 
+                    reviewsCount: reviewsCount, 
+                    images: hotel.images?.map((img: any) => img.image).filter((url: string | null) => url && typeof url === "string") || [],
+                    amenities: hotel.selectedFeatures?.map((f: any) => f.name) || ["Gym", "Restaurant"],
+                    price: parseFloat(roomDetails.retail_price || 8999),
+                    originalPrice: parseFloat(roomDetails?.totalPricePerNight || 8999),
+                    taxes: parseFloat(roomDetails?.taxAmount || 144),
+                    description: hotel.short_description || hotel.description || "",
+                };
+            });
+
+        const resolvedHotelList = await Promise.all(hotelPromises); 
+        const finalHotelList = resolvedHotelList.filter((item): item is Hotel => item !== null);
+
+        // State Update: Append naye hotels
+        setHotels((prev) => [...prev, ...finalHotelList]);
+        setHasMore(meta.hasNextPage || false); 
+        
+        // Naye images ke liye selectedImages update karna
+        const newInitialImages: { [key: number]: number } = {};
+        const currentHotelCount = hotels.length; // hotels.length will give the starting index for new data
+        finalHotelList.forEach((_, index) => {
+            newInitialImages[currentHotelCount + index] = 0;
+        });
+        setSelectedImages(prev => ({ ...prev, ...newInitialImages }));
+
+    } catch (error) {
+        console.error("Error fetching more hotels:", error);
+    } finally {
+        setLoading(false);
+    }
+};
+
+// Load More button ka click handler
+const handleLoadMore = () => {
+    // Check if loading is already in progress
+    if (loading) return; 
+    
+    const nextPage = page + 1;
+    setPage(nextPage);
+    // Asynchronous call to fetchMoreHotels
+    fetchMoreHotels(nextPage); 
+};
+
+// ----------------------------------------------------------------------
+// ⏯️ useEffects (Control Flow)
+// ----------------------------------------------------------------------
+
+  // API fetch triggers when URL params change (Initial Load/New Search) - FIX: No need to replace existing logic
+  useEffect(() => {
+    fetchHotels(); // Calls the fetchHotels (Page 1 Only) function
+  }, [fetchHotels, searchParams]); // searchParams dependency added
 
   // UI Rendering ke pehle, total reviews calculate karein
-  // FIX 1: Variable definition moved here
-  const totalReviewsCount = hotels.reduce((sum, hotel) => sum + hotel.reviewsCount, 0); 
   
-  // API fetch triggers when URL params change
-  useEffect(() => {
-    fetchHotels();
-  }, [fetchHotels]);
-
+  const totalReviewsCount = hotels.reduce((sum, hotel) => sum + hotel.reviewsCount, 0);
   // --------------------------------------------------
-// Sorting Logic Effect
+// Sorting Logic Effect (Unchanged)
 // --------------------------------------------------
 useEffect(() => {
+// ... (Sorting logic remains the same)
   if (!hotels.length) return;
 
   let sorted = [...hotels];
@@ -268,9 +399,8 @@ useEffect(() => {
 }, [sortBy]);
 
 
-  // Sync internal states when URL changes
+  // Sync internal states when URL changes (Unchanged)
   useEffect(() => {
-    // ✅ FIX 3: Removed hardcoded "Manali" default from URL sync
     setCurrentLocation(searchParams.get("location") || "");
     setCurrentCheckIn(searchParams.get("checkIn") || getTodayDateString());
     setCurrentCheckOut(searchParams.get("checkOut") || getTodayDateString());
@@ -278,7 +408,7 @@ useEffect(() => {
     setCurrentChildren(searchParams.get("children") || "0");
   }, [searchParams]);
 
-  // Scroll to top when component mounts
+  // Scroll to top when component mounts (Unchanged)
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -296,7 +426,7 @@ useEffect(() => {
   };
   
   // ===============================================
-  // START NEW LOGIC BLOCK FOR VIEW ALL FIX
+  // VIEW ALL & SEARCH LOGIC (Unchanged)
   // ===============================================
   
   // Helper to check if location is currently empty or not
@@ -463,11 +593,10 @@ const SearchBar = (
     </div>
 );
 
-
   // --- Rendering UI ---
 
   // Handle Loading State
-  if (loading) {
+  if (loading && !hasSearched) { // FIX: Only show full loading screen initially
     return (
       <div className="min-h-screen bg-gray-50 font-opensans pt-[116px] flex items-center justify-center">
         <div className="text-center">
@@ -477,12 +606,31 @@ const SearchBar = (
       </div>
     );
   }
-  
-  // FIX 1: totalReviewsCount calculation moved before the return/JSX block
-
-
-  // Handle No Results State / Error State
   
+ 
+  
+  // Handle No Results State / Error State
+  if (hasSearched && hotels.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
+        {SearchBar}
+        <div className="max-w-7xl mx-auto px-6 py-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Showing Properties in {location || "All Destinations"}</h1>
+            <div className="text-center p-10 bg-white rounded-lg shadow-lg">
+                <h2 className="text-xl font-bold text-red-600 mb-4">
+                    No Properties Found
+                </h2>
+                <p className="text-gray-600">
+                    Sorry, we could not find any properties in {location || "this destination"} for your selected dates.
+                </p>
+                {fetchError && <p className="text-red-500 mt-2 text-sm">Error Details: {fetchError}</p>}
+            </div>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="min-h-screen bg-gray-50 font-opensans pt-[116px]">
       {SearchBar}
@@ -494,8 +642,8 @@ const SearchBar = (
             Showing Properties in {location || "All Destinations"}
           </h1>
           <span className="text-sm text-gray-600">
-             {totalReviewsCount.toLocaleString()} Ratings found {/* FIX: Added " Ratings found" text back */}
-          </span> 
+{/*              {totalReviewsCount.toLocaleString()} Ratings found  */}
+          </span> 
         </div>
 
         {/* Hotel Cards - EXACT FIGMA LAYOUT */}
@@ -537,7 +685,6 @@ const SearchBar = (
                               <img
                                 src={img}
                                 alt={`Thumbnail ${imgIndex + 1}`}
-                                className="w-full h-full object-cover"
                               />
                             ) : (
                               <div className="w-full h-full bg-gray-800 bg-opacity-70 flex items-center justify-center text-white text-xs font-semibold">
@@ -559,23 +706,23 @@ const SearchBar = (
                         <h2 className="text-xl font-bold text-gray-900 mb-1">
                           {hotel.name}
                         </h2>
-                        {/* FIX 3: ADDED DYNAMIC RATING AND REVIEW COUNT DISPLAY HERE */}
-                        {/* <div className="flex items-center gap-2 mb-2">
-                            <div className="flex items-center">
-                                {Array.from({ length: 5 }, (_, i) => (
-                                    <Star
-                                        key={i}
-                                        className={`w-4 h-4 ${
-                                            i < Math.round(hotel.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                                        }`}
-                                    />
-                                ))}
-                            </div>
-                            <span className="text-sm text-gray-700 font-semibold">{hotel.rating.toFixed(1)}</span>
-                            <span className="text-sm text-gray-500">| {hotel.reviewsCount.toLocaleString()} Reviews</span>
-                        </div> */}
-                        {/* END FIX 3 */}
-                        
+                        {/* FIX 3: ADDED DYNAMIC RATING AND REVIEW COUNT DISPLAY HERE */}
+                        {/* <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                    <Star
+                                        key={i}
+                                        className={`w-4 h-4 ${
+                                            i < Math.round(hotel.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-sm text-gray-700 font-semibold">{hotel.rating.toFixed(1)}</span>
+                            <span className="text-sm text-gray-500">| {hotel.reviewsCount.toLocaleString()} Reviews</span>
+                        </div> */}
+                        {/* END FIX 3 */}
+                        
                         <div className="flex items-center gap-2 text-gray-600 mb-4">
                           <MapPin className="w-4 h-4 text-gray-500" />
                           <span className="text-sm">Mahipalpur | 1.5Km drive to Mall Road</span>
@@ -698,10 +845,16 @@ const SearchBar = (
 
         {/* Load More Button */}
         <div className="flex justify-center mt-10">
-          {hotels.length > 0 && (<></>
-//             <button className="bg-gray-900 text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors">
-//               Load More
-//             </button>
+          {hasSearched && hotels.length > 0 && hasMore && !loading && (
+            <button 
+              onClick={handleLoadMore} 
+              className="bg-gray-900 text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+            >
+              Load More
+            </button>
+          )}
+          {loading && page > 1 && (
+              <div className="text-gray-600">Loading more hotels...</div>
           )}
         </div>
       </div>
