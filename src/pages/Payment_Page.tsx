@@ -46,7 +46,8 @@ const BookingPage: React.FC = () => {
 
     const navigate = useNavigate(); // ✅ FIX 2: useNavigate hook use kiya
     const [searchParams] = useSearchParams();
-    const { propertyId } = useParams<{ propertyId: string }>();
+    const propertyId = searchParams.get('propertyId');
+    
     const retailPriceStr = searchParams.get('retailPrice') || '0';
     const taxPriceStr = searchParams.get('taxPrice') || '0';
     const roomName = searchParams.get('roomName') || 'Deluxe Room';
@@ -55,8 +56,10 @@ const BookingPage: React.FC = () => {
     const roomId = searchParams.get('roomId') || ''; 
 
     const retailPrice = parseFloat(retailPriceStr);
-    const taxPrice = parseFloat(taxPriceStr);
-    const finalTotal = retailPrice + taxPrice;
+    const taxPrice = parseFloat(taxPriceStr);
+    
+    // ✅ FIX 1: Price calculation corrected (Retail Price + Taxes)
+    const finalTotal = retailPrice + taxPrice; 
 
 
     const token = localStorage.getItem('shineetrip_token');
@@ -154,10 +157,10 @@ const validateForm = () => {
             return;
         }
 
-        if (finalTotal <= 0) {
-            setPaymentMessage('Invalid total price for booking.');
-            return;
-        }
+       if (finalTotal <= 0 || isNaN(finalTotal)) { 
+            setPaymentMessage('Invalid total price for booking.');
+            return;
+        }
         
         if (!token || isNaN(customerId)) { // Check if customerId is NaN
              setPaymentMessage('Authorization token or Customer ID missing/invalid. Please log in again.');
@@ -169,10 +172,6 @@ const validateForm = () => {
     navigate('/login'); // ya login modal khol
     return;
 }
-if (finalTotal <= 0) {
-        setPaymentMessage('Invalid total price for booking.');
-        return;
-    }
 
     // Ensure propertyId exists before attempting conversion
         if (!propertyId) {

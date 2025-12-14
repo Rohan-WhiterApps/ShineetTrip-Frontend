@@ -421,7 +421,10 @@ useEffect(() => {
   };
 
   const handleHotelClick = (hotelId: string) => {
-    const currentSearchParams = searchParams.toString();
+    const currentSearchParams = new URLSearchParams(searchParams.toString()); 
+
+    // 💡 FIX 2 (CRITICAL): Yahan propertyId ko query parameter mein add karein
+    currentSearchParams.set('propertyId', hotelId);
     navigate(`/room-booking/${hotelId}?${currentSearchParams}`);
   };
   
