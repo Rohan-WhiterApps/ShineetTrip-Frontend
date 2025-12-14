@@ -12,8 +12,9 @@ import { PolicyModal } from '../components/ui/PolicyModal';
 
 // Main Component: RoomBookingPage
 export default function RoomBookingPage() {
-    const { hotelId } = useParams<{ hotelId: string }>();
-    const hotelIdNumber = hotelId ? Number(hotelId) : null;
+    // 1. FETCHING LOGIC (hotelId path se, Filters query se)
+    const { hotelId } = useParams<{ hotelId: string }>(); // ✅ Path parameter uthaya
+    const hotelIdNumber = hotelId ? Number(hotelId) : null;
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
@@ -24,19 +25,23 @@ export default function RoomBookingPage() {
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<any>(null);
-const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+    const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
 
-    // NOTE: Ye states ab use nahi honge agar hum direct payment karte hain, 
-    // lekin hum inhe declare rakhenge taaki component structure intact rahe.
+    // NOTE: Availability check states (Rehnde dete hain)
     const [isAvailabilityCheckOpen, setIsAvailabilityCheckOpen] = useState(false);
     const [roomForCheck, setRoomForCheck] = useState<any>(null);
 
     // --- Search Parameters (Read from URL and made editable) ---
+    // Original URL params ko seedhe use kiya, aur editable states ko sync kiya
     const initialLocation = searchParams.get("location") || "";
     const initialCheckIn = searchParams.get("checkIn") || "";
     const initialCheckOut = searchParams.get("checkOut") || "";
     const initialAdults = searchParams.get("adults") || "2";
     const initialChildren = searchParams.get("children") || "0";
+    
+    // Original filters for API call
+    const checkIn = initialCheckIn;
+    const checkOut = initialCheckOut;
 
     // ✅ New States for Editable Fields
     const [currentLocation, setCurrentLocation] = useState(initialLocation);
@@ -45,7 +50,7 @@ const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [currentAdults, setCurrentAdults] = useState(initialAdults);
     const [currentChildren, setCurrentChildren] = useState(initialChildren);
         
-    // Ab searchParamData current states se banega jab modal open hoga
+    // Search data for modal forwarding
     const searchParamData = { 
         location: currentLocation, 
         checkIn: currentCheckIn, 
@@ -54,41 +59,46 @@ const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
         children: currentChildren 
     };
     
-    // Original URL params (API call ke liye, jo URL mein hain)
-    const location = searchParams.get("location") || "";
-    const checkIn = searchParams.get("checkIn") || "";
-    const checkOut = searchParams.get("checkOut") || "";
-    const adults = searchParams.get("adults") || "2";
-    const children = searchParams.get("children") || "0";
-
     // --- Handlers (Modal & Booking) ---
-    // Naya Handler function for Policy Modal
-const handleOpenPolicyModal = () => { setIsPolicyModalOpen(true); };
-const handleClosePolicyModal = () => { setIsPolicyModalOpen(false); };
-// ... handleBookNow and other handlers
-    const handleOpenModal = (roomData: any) => { setSelectedRoom(roomData); setIsModalOpen(true); };
-    const handleCloseModal = () => { setIsModalOpen(false); setSelectedRoom(null); };
-    
-  
-    const handleCloseAvailabilityCheck = () => { setIsAvailabilityCheckOpen(false); setRoomForCheck(null); }; 
-
-
-    
+    const handleOpenPolicyModal = () => { setIsPolicyModalOpen(true); };
+    const handleClosePolicyModal = () => { setIsPolicyModalOpen(false); };
+    const handleOpenModal = (roomData: any) => { setSelectedRoom(roomData); setIsModalOpen(true); };
+    const handleCloseModal = () => { setIsModalOpen(false); setSelectedRoom(null); };
+    const handleCloseAvailabilityCheck = () => { setIsAvailabilityCheckOpen(false); setRoomForCheck(null); }; 
+    
+  
+    // 🟢 CRITICAL FIX: Navigation to Payment Page
     const handleProceedToPayment = (roomData: any) => { 
-        const roomDetails = {
-            roomId: roomData.id, roomName: roomData.room_type, retailPrice: roomData.price.retail_price, 
-            taxPrice: roomData.price.retail_tax_price, checkIn: checkIn, checkOut: checkOut,
-        };
-        const queryString = new URLSearchParams(roomDetails).toString();
-        navigate(`/booking?${queryString}`);
+        // 1. Existing Filters aur Parameters uthao (location, checkIn, adults, children)
+        const existingParams = new URLSearchParams(searchParams.toString());
+
+        // 2. Booking specific CRITICAL data ko set karo
+        
+        // ✅ FIX 1: hotelId ko propertyId ke roop mein set kiya
+        existingParams.set('propertyId', hotelId || ''); 
+
+        // ✅ FIX 2: Room aur Price details add kiye
+        existingParams.set('roomId', roomData.id);
+        existingParams.set('roomName', roomData.room_type);
+        
+        // 🛑 FIX 3: Price values ko float karke string format mein bhejo
+        const retailPrice = parseFloat(roomData.price.retail_price) || 0;
+        const taxPrice = parseFloat(roomData.price.retail_tax_price) || 0;
+        
+        existingParams.set('retailPrice', retailPrice.toFixed(2));
+        existingParams.set('taxPrice', taxPrice.toFixed(2));
+        
+        // 🛑 FIX 4: Redundant object creation hata diya
+        
+        // 3. Navigation to Payment Page
+        navigate(`/booking?${existingParams.toString()}`);
         
-      
-        handleCloseAvailabilityCheck(); 
+        handleCloseAvailabilityCheck(); 
     };
-    
-  
+    
+  
     const handleBookNow = (roomData: any) => { 
-        handleProceedToPayment(roomData);
+        handleProceedToPayment(roomData);
     };
     
     // ✅ NEW: Function to trigger a fresh search
@@ -105,14 +115,14 @@ const handleClosePolicyModal = () => { setIsPolicyModalOpen(false); };
         navigate(`/hotellists?${newSearchParams}`);
     };
 
-    // --- Data Fetching (Fetch Hotel Details ONLY) ---
+    // --- Data Fetching (Fetch Hotel Details ONLY - Unchanged) ---
     useEffect(() => {
         const fetchHotelData = async () => {
-            if (!hotelId) { setError('No hotel ID provided'); setLoading(false); return; }
+            // ... (Fetching logic remains unchanged)
+            if (!hotelId) { setError('No hotel ID provided'); setLoading(false); return; }
             
             const token = localStorage.getItem('shineetrip_token');
             
-            // Mandatory Token Check 
             if (!token) {
                 console.error("Authorization Required: Token missing. Redirecting to home/login.");
                 setError("You must be logged in to view property details.");
@@ -150,8 +160,7 @@ const handleClosePolicyModal = () => { setIsPolicyModalOpen(false); };
     useEffect(() => { window.scrollTo(0, 0); }, []);
 
     // --- Conditional Render (Pre-JSX Checks) ---
-    const token = localStorage.getItem('shineetrip_token');
-    
+    const token = localStorage.getItem('shineetrip_token');    
     // Check if redirect was triggered (token missing but not loading anymore)
     if (!token && !loading && !hotelData) {
         return (
