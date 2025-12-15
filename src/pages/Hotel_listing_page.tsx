@@ -728,7 +728,10 @@ const SearchBar = (
                         
                         <div className="flex items-center gap-2 text-gray-600 mb-4">
                           <MapPin className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm">Mahipalpur | 1.5Km drive to Mall Road</span>
+                          <span className="text-sm">
+                                {hotel.location || location} 
+                                {hotel.location && ' | 1.5Km drive to city center'} {/* Optional static distance re-added */}
+                            </span>
                         </div>
 
                         {/* Amenities - Simple checkboxes like Figma */}

@@ -261,8 +261,8 @@ const CustomerProfilePage: React.FC = () => {
     
     // 💡 FIX 2: Dynamic Booking Data Extraction
     const activeBookings = customer.orders
-        ?.flatMap(order => order.orderRooms)
-        .filter(room => room.property && room.property.name) // Only valid rooms
+        ?.flatMap(order => order.orderRooms || [])
+        .filter(room => room && room.property && room.property.name)
         .map(room => ({
             id: room.id,
             destination: `${room.property.name}, ${room.property.city}`,
