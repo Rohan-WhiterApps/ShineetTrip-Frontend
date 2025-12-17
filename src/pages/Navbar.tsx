@@ -278,7 +278,7 @@ export const Navbar = () => {
                         <button
                           onClick={() => {
                             setShowUserMenu(false);
-                            navigate('/bookings');
+                            navigate('/mybooking');
                           }}
                           className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors text-gray-700"
                         >

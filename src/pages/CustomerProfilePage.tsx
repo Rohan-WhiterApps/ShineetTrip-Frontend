@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, MapPin, Loader2, LogOut, Edit3, Briefcase, Calendar, MessageSquare, Globe, Heart, ShoppingBag, X } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Loader2, LogOut, Edit3, Briefcase, Calendar, Globe, ShoppingBag, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Interface for Customer Data (Based on new Swagger's GET /customers/{id})
@@ -43,6 +43,8 @@ interface OrderRoom {
     };
 }
 
+
+
 // ------------------------------------------------
 // Helper: Date Format
 // ------------------------------------------------
@@ -85,6 +87,7 @@ const CustomerProfilePage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isEditMode, setIsEditMode] = useState(false); 
     const [formState, setFormState] = useState<Partial<CustomerData>>({});
+    const [myBookings, setMyBookings] = useState<any[]>([]);
     
     const customerDbId = localStorage.getItem('shineetrip_db_customer_id');
     const token = localStorage.getItem('shineetrip_token');
@@ -93,66 +96,83 @@ const CustomerProfilePage: React.FC = () => {
     // 1. GET By ID Logic: Fetch Customer Data and Orders
     // ------------------------------------------------
     const fetchProfileData = useCallback(async () => {
-        if (!customerDbId || !token) {
-            setError("Authorization required. Please log in.");
-            setLoading(false);
-            return;
+    if (!customerDbId || !token) {
+        setError("Authorization required. Please log in.");
+        setLoading(false);
+        return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+        // 1. Fetch Basic Profile Data (Swagger: GET /customers/{id})
+        const apiUrl = `http://46.62.160.188:3000/customers/${customerDbId}`;
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+            }
+            throw new Error("Failed to fetch profile. Session expired or access denied.");
         }
 
-        setLoading(true);
-        setError(null);
-
+        const profileData: CustomerData = await response.json();
+        
+        // 2. FETCH DETAILED ORDERS (Swagger: GET /order/search)
+        // Ye bohot zaroori hai kyunki /customers/id wali API 'orderRooms' nahi bhejti
+        let detailedOrders = [];
         try {
-            // Using the correct endpoint from new Swagger: /customers/{id}
-            const apiUrl = `http://46.62.160.188:3000/customers/${customerDbId}`;
-            const response = await fetch(apiUrl, {
+            const ordersRes = await fetch(`http://46.62.160.188:3000/order/search?customerId=${customerDbId}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
             });
-
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                     handleLogout();
-                }
-                throw new Error("Failed to fetch profile. Session expired or access denied.");
+            if (ordersRes.ok) {
+                detailedOrders = await ordersRes.json();
+                console.log("Detailed Orders Fetched:", detailedOrders); // Debugging ke liye
             }
-
-            const data: CustomerData = await response.json();
-            
-            // Normalize DOB from Swagger to a user-friendly format for display
-            const normalizedData: CustomerData = {
-                ...data,
-                // dob (date of birth) from Swagger is mapped
-                dob: data.dob || 'N/A', 
-                // Using fallbacks for non-schema fields
-                work_title: data.work_title || "Travel Enthusiast",
-                language: data.language || "Hindi, English",
-            };
-            
-            setCustomer(normalizedData);
-            setFormState({
-                // Initialize form state with fields meant for editing/patching
-                first_name: normalizedData.first_name,
-                last_name: normalizedData.last_name,
-                email: normalizedData.email,
-                phone: normalizedData.phone,
-                dob: normalizedData.dob, // Send DOB to form state
-                // Address/Work/Language yahan par nahi hai, to manually add kar dete hain agar backend support karta hai
-                address: normalizedData.address || '',
-                work_title: normalizedData.work_title || '',
-                language: normalizedData.language || '',
-            });
-
-        } catch (err) {
-            console.error("Profile fetch error:", err);
-            setError(err instanceof Error ? err.message : 'Failed to load user profile.');
-        } finally {
-            setLoading(false);
+        } catch (orderErr) {
+            console.error("Detailed orders fetch failed", orderErr);
         }
-    }, [customerDbId, token, navigate]); 
+
+        // 3. Data ko Merge aur Normalize karein
+        const normalizedData: CustomerData = {
+            ...profileData,
+            orders: detailedOrders.length > 0 ? detailedOrders : (profileData.orders || []), 
+            dob: profileData.dob || 'N/A', 
+            work_title: profileData.work_title || "Travel Enthusiast",
+            language: profileData.language || "Hindi, English",
+        };
+        
+        // Final States Set karein
+        setCustomer(normalizedData);
+        setFormState({
+            first_name: normalizedData.first_name || '',
+            last_name: normalizedData.last_name || '',
+            email: normalizedData.email || '',
+            phone: normalizedData.phone || '',
+            dob: normalizedData.dob, 
+            address: normalizedData.address || '',
+            work_title: normalizedData.work_title || '',
+            language: normalizedData.language || '',
+        });
+
+    } catch (err) {
+        console.error("Profile fetch error:", err);
+        setError(err instanceof Error ? err.message : 'Failed to load user profile.');
+    } finally {
+        setLoading(false);
+    }
+}, [customerDbId, token, navigate]); 
 
     useEffect(() => {
         fetchProfileData();
@@ -209,6 +229,8 @@ const CustomerProfilePage: React.FC = () => {
             setLoading(false);
         }
     };
+
+    
 
     // --- Utility Handlers ---
     const handleLogout = () => {
@@ -269,12 +291,19 @@ const CustomerProfilePage: React.FC = () => {
             count: (room.adults || 0) + (room.children || 0), // Combining adults and children as count
             image_url: room.property.images?.[0]?.image || "https://placehold.co/180x100/A0A0A0/444444?text=Trip+Image"
         })) || [];
-
+const ProfileNavItem: React.FC<{ icon: React.ElementType, label: string, active?: boolean, onClick: () => void }> = ({ icon: Icon, label, active = false, onClick }) => (
+    <button onClick={onClick} className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+        active ? 'bg-[#D2A256] text-white shadow-md' : 'text-gray-700 hover:bg-gray-100'
+    }`}>
+        <Icon className="w-5 h-5" />
+        <span className="font-medium text-sm">{label}</span>
+    </button>
+);
 
     // --- Profile Display ---
     return (
         <div className="min-h-screen bg-gray-50 font-opensans pt-24 pb-12">
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="max-w-7xl mt-16 mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
                 
                 {/* Column 1: Sidebar (Design Maintained) */}
                 <div className="lg:col-span-1 space-y-6">
@@ -282,8 +311,8 @@ const CustomerProfilePage: React.FC = () => {
                         <h3 className="text-xl font-extrabold text-gray-900 mb-4 border-b pb-2">Profile</h3>
                         
                         <div className="space-y-1">
-                            <ProfileNavItem icon={User} label="About me" active={true} />
-                            <ProfileNavItem icon={ShoppingBag} label="My booking" active={false} />
+                            <ProfileNavItem icon={User} label="About me" active={true} onClick={() => navigate('/profile')}/>
+                            <ProfileNavItem icon={ShoppingBag} label="My booking" active={false} onClick={() => navigate('/mybooking')}/>
                         </div>
                     </div>
                     
@@ -313,7 +342,7 @@ const CustomerProfilePage: React.FC = () => {
                         <div className="flex items-start gap-6"> 
                             
                             {/* Personal Details Grid (Dynamic/Editable) */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-8 flex-grow">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-8 grow">
                                 
                                 {isEditMode ? (
                                     <>
@@ -364,44 +393,45 @@ const CustomerProfilePage: React.FC = () => {
                         
                     </div>
                     
-                    {/* 2. My Bookings Section (Dynamic) */}
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 space-y-6">
-                        <h2 className="text-2xl font-extrabold text-gray-900 mb-6 border-b pb-4">My Bookings</h2>
-                        
-                        {activeBookings.length > 0 ? (
-                            <div className="flex overflow-x-auto gap-4 pb-4">
-                                {/* Dynamic Booking Cards */}
-                                {activeBookings.map((booking) => (
-                                    <BookingCard 
-                                        key={booking.id}
-                                        destination={booking.destination}
-                                        count={booking.count}
-                                        image_url={booking.image_url} checkIn={''} checkOut={''}                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            // 💡 FIX 2: Dynamic "No Booking" message
-                            <div className="text-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                <ShoppingBag className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                                <p className="text-gray-600 font-semibold">No Bookings Found Yet</p>
-                                <p className="text-sm text-gray-500">Book your first trip to see it here!</p>
-                            </div>
-                        )}
-
-                        {/* Static Reviews/Testimonials (Design maintained) */}
-                        {/* <h2 className="text-xl font-bold text-gray-900 mb-4 border-t pt-6">What people are saying</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {Array.from({ length: 3 }).map((_, index) => (
-                                <ReviewSnippet key={index} />
-                            ))}
-                        </div>
-                        <div className="text-center mt-6">
-                            <button className="bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-                                Show all 6 Reviews
-                            </button>
-                        </div> */}
-                    </div>
-                    
+                   {/* 2. My Bookings Section */}
+{/* 2. My Bookings Section - Final Fixed Version */}
+<div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+    <h2 className="text-xl font-extrabold text-gray-900 mb-6">My Bookings</h2>
+    
+    <div className="flex overflow-x-auto gap-5 pb-4 scrollbar-hide">
+        {customer && customer.orders && customer.orders.length > 0 ? (
+            customer.orders.map((order: any) => {
+                // Har order ke andar orderRooms array hai ya nahi check karein
+                const rooms = order.orderRooms || [];
+                
+                // Agar rooms hain toh unhe render karein
+                if (rooms.length > 0) {
+                    return rooms.map((room: any) => (
+                        <BookingCard 
+                            key={`${order.id}-${room.id}`}
+                            // City access: room -> property -> city
+                            destination={`${room.property?.city || 'India'}`}
+                            // Screenshot ke liye '1' ya rooms count dikhayein
+                            count={1} 
+                            // Image access: room -> property -> images[0] -> image
+                            image_url={room.property?.images?.[0]?.image || "https://placehold.co/180x110?text=Hotel"}
+                            onClick={() => navigate('/my-bookings')}
+                        />
+                    ));
+                }
+                
+                // Agar order hai par room list gayab hai (Rare case)
+                return null;
+            })
+        ) : (
+            // No Bookings Case
+            <div className="w-full text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <p className="text-gray-500 font-medium">No bookings found yet</p>
+            </div>
+        )}
+    </div>
+</div>                    
                 </div>
                 
             </div>
@@ -461,16 +491,17 @@ const ProfileEditField: React.FC<{ label: string, name: keyof CustomerData, valu
 
 
 // Dynamic Booking Card Component
-const BookingCard: React.FC<Pick<OrderRoom, 'checkIn' | 'checkOut'> & { destination: string, count: number, image_url: string }> = ({ destination, count, image_url }) => (
-    <div className="flex-shrink-0 w-[180px] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow">
+const BookingCard: React.FC<{ destination: string, count: number, image_url: string, onClick?: () => void }> = ({ destination, count, image_url, onClick }) => (
+    <div className="shrink-0 w-[180px] bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer" onClick={onClick}>
         <img 
             src={image_url} 
             alt={destination} 
-            className="h-[100px] w-full object-cover" 
+            className="h-[110px] w-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/180x110?text=No+Image" }}
         />
-        <div className="p-3">
-            <p className="font-bold text-base text-gray-900">{destination}</p>
-            <p className="text-xs text-gray-500">{count} Guest{count > 1 ? 's' : ''}</p>
+        <div className="p-3 text-center"> {/* Screenshot mein text center hai */}
+            <p className="font-bold text-sm text-gray-900 truncate">{destination}</p>
+            <p className="text-[10px] text-gray-500 mt-1">{count} trips</p> {/* Screenshot mein 'trips' likha hai */}
         </div>
     </div>
 );

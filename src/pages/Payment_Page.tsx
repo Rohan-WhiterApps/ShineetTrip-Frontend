@@ -167,11 +167,7 @@ const validateForm = () => {
              return;
         }
 
-        if (!token) {
-    setPaymentMessage('Session expired. Please log in again.');
-    navigate('/login'); // ya login modal khol
-    return;
-}
+   
 
     // Ensure propertyId exists before attempting conversion
         if (!propertyId) {
