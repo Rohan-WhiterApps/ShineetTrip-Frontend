@@ -69,32 +69,33 @@ export default function RoomBookingPage() {
   
     // 🟢 CRITICAL FIX: Navigation to Payment Page
     const handleProceedToPayment = (roomData: any) => { 
-        // 1. Existing Filters aur Parameters uthao (location, checkIn, adults, children)
-        const existingParams = new URLSearchParams(searchParams.toString());
+    // Fresh object create karo taaki purana koi bhi data (like old price) carry forward na ho
+    const params = new URLSearchParams();
 
-        // 2. Booking specific CRITICAL data ko set karo
-        
-        // ✅ FIX 1: hotelId ko propertyId ke roop mein set kiya
-        existingParams.set('propertyId', hotelId || ''); 
+    // 1. Basic Search Info (Editable states se lo)
+    params.set('location', currentLocation);
+    params.set('checkIn', currentCheckIn);
+    params.set('checkOut', currentCheckOut);
+    params.set('adults', currentAdults);
+    params.set('children', currentChildren);
 
-        // ✅ FIX 2: Room aur Price details add kiye
-        existingParams.set('roomId', roomData.id);
-        existingParams.set('roomName', roomData.room_type);
-        
-        // 🛑 FIX 3: Price values ko float karke string format mein bhejo
-        const retailPrice = parseFloat(roomData.price.retail_price) || 0;
-        const taxPrice = parseFloat(roomData.price.retail_tax_price) || 0;
-        
-        existingParams.set('retailPrice', retailPrice.toFixed(2));
-        existingParams.set('taxPrice', taxPrice.toFixed(2));
-        
-        // 🛑 FIX 4: Redundant object creation hata diya
-        
-        // 3. Navigation to Payment Page
-        navigate(`/booking?${existingParams.toString()}`);
-        
-        handleCloseAvailabilityCheck(); 
-    };
+    // 2. Property & Room Info
+    params.set('propertyId', hotelId || ''); 
+    params.set('roomId', roomData.id);
+    params.set('roomName', roomData.room_type);
+    
+    // 3. Price Details (roomData se fresh values uthao)
+    const retailPrice = parseFloat(roomData.price.retail_price) || 0;
+    const taxPrice = parseFloat(roomData.price.retail_tax_price) || 0;
+    
+    params.set('retailPrice', retailPrice.toFixed(2));
+    params.set('taxPrice', taxPrice.toFixed(2));
+    
+    // 4. Navigate
+    navigate(`/booking?${params.toString()}`);
+    
+    handleCloseAvailabilityCheck(); 
+};
     
   
     const handleBookNow = (roomData: any) => { 

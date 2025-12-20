@@ -200,84 +200,95 @@ const getShortDescription = (text: string, limit = 120) => {
 
                     </div>
 
-                    {/* Pricing Options (Matches Figma Boxes) */}
-                    <div className="pt-5 border-t border-dashed border-gray-200">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 {/* Pricing Options (Matches Figma Boxes) */}
+<div className="pt-5 border-t border-dashed border-gray-200">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
+        {/* Option 1: Base Price (Original) */}
+        <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] rounded-xl p-4 relative h-full min-h-[120px]">
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="font-bold text-gray-900">Room Only</div>
+                    <div onClick={handlePolicyClick} className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
+                </div>
+                <div>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
+                        <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.3).toLocaleString()}</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
+                </div>
+            </div>
+            <button 
+                onClick={(e) => handleBookNowClick(e, room)}
+                className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
+            >
+                BOOK NOW
+            </button>
+        </div>
 
-  
-                            
-                            {/* Option 1: Highlighted (Active Plan) */}
-                            <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] rounded-xl p-4 relative h-full min-h-[120px]">
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="font-bold text-gray-900">Room Only</div>
-                                        <div onClick={handlePolicyClick} className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
-                                    </div>
-                                    <div>
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
-                                            <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.3).toLocaleString()}</span>
-                                        </div>
-                                        <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={(e) => handleBookNowClick(e, room)}
-                                    className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
-                                >
-                                    BOOK NOW
-                                </button>
-                            </div>
+        {/* Option 2: 1.2x Price */}
+        <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="font-bold text-gray-900">Room Only</div>
+                    <div onClick={handlePolicyClick} className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
+                </div>
+                <div>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-green-600 font-bold text-lg">INR {Math.round(basePrice * 1.2).toLocaleString()}</span>
+                        <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.5).toLocaleString()}</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
+                </div>
+            </div>
+            <button 
+                onClick={(e) => handleBookNowClick(e, {
+                    ...room,
+                    price: {
+                        ...room.price,
+                        retail_price: (basePrice * 1.2).toFixed(2),
+                        retail_tax_price: (taxPrice * 1.2).toFixed(2)
+                    }
+                })}
+                className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
+            >
+                BOOK NOW
+            </button>
+        </div>
 
-                            {/* Option 2: Standard Plan (Visual Placeholder) */}
-                            <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="font-bold text-gray-900">Room Only</div>
-                                        <div className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
-                                    </div>
-                                    <div>
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-green-600 font-bold text-lg">INR {Math.round(basePrice * 1.2).toLocaleString()}</span>
-                                            <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.5).toLocaleString()}</span>
-                                        </div>
-                                        <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={(e) => handleBookNowClick(e, room)}
-                                    className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
-                                >
-                                    BOOK NOW
-                                </button>
-                            </div>
+        {/* Option 3: 1.3x Price */}
+        <div className="hidden md:flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="font-bold text-gray-900">Boom only</div>
+                    <div onClick={handlePolicyClick} className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
+                </div>
+                <div>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
+                        <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.3).toLocaleString()}</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
+                </div>
+            </div>
+            <button 
+                onClick={(e) => handleBookNowClick(e, {
+                    ...room,
+                    price: {
+                        ...room.price,
+                        retail_price: (basePrice * 1.2).toFixed(2),
+                        retail_tax_price: (taxPrice * 1.2).toFixed(2)
+                    }
+                })}
+                className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
+            >
+                BOOK NOW
+            </button>
+        </div>
 
-                             {/* Option 3: Standard Plan (Visual Placeholder) */}
-                             <div className="hidden md:flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="font-bold text-gray-900">Boom only</div>
-                                        <div className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
-                                    </div>
-                                    <div>
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
-                                            <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.3).toLocaleString()}</span>
-                                        </div>
-                                        <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={(e) => handleBookNowClick(e, room)}
-                                    className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
-                                >
-                                    BOOK NOW
-                                </button>
-                            </div>
-
-                        </div>
-                    </div>
+    </div>
+</div>
                 </div>
             </div>
         </div>
