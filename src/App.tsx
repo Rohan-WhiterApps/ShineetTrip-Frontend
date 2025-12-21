@@ -17,6 +17,9 @@ import PackagesPage from "./toursPackages/Pacakges";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CustomerProfilePage from "./pages/CustomerProfilePage";
 import MyBookingsPage from "./pages/MyBookingsPage";
+import HolidayPackages from "./pages/HolidayPackages/pages/HolidayPackages";
+import PackageDetailsPage from "./pages/HolidayPackages/pages/PackageDetailsPage";
+ 
 
 
 
@@ -57,10 +60,13 @@ const App: React.FC = () => {
   <Route path="/tours" element={<Tourspackages/>}/>
   <Route path="/profile" element={<CustomerProfilePage/>}/>
   <Route path="/mybooking" element={<MyBookingsPage/>}/>
+  
   
 
   
     <Route path='/packages' element={<PackagesPage/>}/>
+    <Route path="/holiday-packages" element={<HolidayPackages />} />
+    <Route path="/package-detail" element={<PackageDetailsPage/>}/>
   
     <Route path='/about' element={<AboutPage/>}/>
     <Route path='/privacy-policy' element={<PrivacyPolicy/>}/>
