@@ -8,15 +8,20 @@ import RoomCard from '../components/ui/RoomCard';
 import { AvailabilityCheckModal } from '../components/ui/AvailabilityCheckModal'; 
 import HotelReviews from '../components/ui/HotelReviews'; 
 import { PolicyModal } from '../components/ui/PolicyModal';
+import { ServiceDetailsModal } from '../components/ui/ServiceDetailsModal';
 
 
 // Main Component: RoomBookingPage
 export default function RoomBookingPage() {
+
+    
     // 1. FETCHING LOGIC (hotelId path se, Filters query se)
     const { hotelId } = useParams<{ hotelId: string }>(); // ✅ Path parameter uthaya
     const hotelIdNumber = hotelId ? Number(hotelId) : null;
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+    const [selectedService, setSelectedService] = useState<any>(null);
 
     // --- Component States ---
     const [hotelData, setHotelData] = useState<any>(null);
@@ -26,13 +31,13 @@ export default function RoomBookingPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<any>(null);
     const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+    const [services, setServices] = useState<any[]>([]);
 
     // NOTE: Availability check states (Rehnde dete hain)
     const [isAvailabilityCheckOpen, setIsAvailabilityCheckOpen] = useState(false);
     const [roomForCheck, setRoomForCheck] = useState<any>(null);
 
-    // --- Search Parameters (Read from URL and made editable) ---
-    // Original URL params ko seedhe use kiya, aur editable states ko sync kiya
+    // --- Initial Filter Values from URL ---
     const initialLocation = searchParams.get("location") || "";
     const initialCheckIn = searchParams.get("checkIn") || "";
     const initialCheckOut = searchParams.get("checkOut") || "";
@@ -65,6 +70,11 @@ export default function RoomBookingPage() {
     const handleOpenModal = (roomData: any) => { setSelectedRoom(roomData); setIsModalOpen(true); };
     const handleCloseModal = () => { setIsModalOpen(false); setSelectedRoom(null); };
     const handleCloseAvailabilityCheck = () => { setIsAvailabilityCheckOpen(false); setRoomForCheck(null); }; 
+    
+    const handleOpenServiceModal = (serviceData: any) => {
+        setSelectedService(serviceData);
+        setIsServiceModalOpen(true);
+    };
     
   
     // 🟢 CRITICAL FIX: Navigation to Payment Page
@@ -115,6 +125,25 @@ export default function RoomBookingPage() {
         // Navigate back to listing page with new parameters
         navigate(`/hotellists?${newSearchParams}`);
     };
+     
+    // Is useEffect mein setServices ke saath ek empty array fallback rakhein
+useEffect(() => {
+    const fetchServices = async () => {
+        try {
+            const token = localStorage.getItem('shineetrip_token');
+            const response = await fetch('http://46.62.160.188:3000/service-prod-info', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            // Agar data array hai toh set karo, warna empty array
+            setServices(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("Failed to fetch services", err);
+            setServices([]); 
+        }
+    };
+    fetchServices();
+}, [hotelId]);
 
     // --- Data Fetching (Fetch Hotel Details ONLY - Unchanged) ---
     useEffect(() => {
@@ -314,7 +343,7 @@ export default function RoomBookingPage() {
                     <div className="flex items-center gap-2 text-gray-600 text-sm">
                         <span>{hotelData?.city || location}</span> 
                         <span>|</span>
-                        <span>1.5km drive to {hotelData?.address}</span>
+                        <span>{hotelData?.address}</span>
                     </div>
                 </div>
                 
@@ -335,7 +364,8 @@ export default function RoomBookingPage() {
                                 hotelImages={hotelImages} 
                                 onMoreInfoClick={handleOpenModal} 
                                 onBookNowClick={handleBookNow} 
-                                // ✅ POLICY HANDLER PASSED
+                                services={services}
+                                onServiceDetailClick={handleOpenServiceModal}
                                 onPolicyClick={handleOpenPolicyModal} 
                             />
                         ))
@@ -357,7 +387,8 @@ export default function RoomBookingPage() {
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     roomName={selectedRoom.room_type || 'Room Details'}
-                    roomImages={hotelImages} roomData={undefined}                />
+                    roomImages={hotelImages} 
+                    roomData={selectedRoom}               />
             )}
             
             {/* 2. Availability Check Modal Render */}
@@ -380,6 +411,12 @@ export default function RoomBookingPage() {
                     refundRulesHTML={hotelData.refundRules || ''} // Data source: hotelData
                 />
             )}
+
+            <ServiceDetailsModal 
+                isOpen={isServiceModalOpen}
+                onClose={() => setIsServiceModalOpen(false)}
+                serviceData={selectedService}
+            />
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Users, Maximize2 } from 'lucide-react';
 
 
@@ -6,15 +6,17 @@ import { ChevronLeft, ChevronRight, Users, Maximize2 } from 'lucide-react';
 interface RoomCardProps {
     room: any; 
     hotelImages: string[];
-    // Modal open karne ke liye handler
+    services: any[];
     onMoreInfoClick: (roomData: any) => void;
-    // Booking flow shuru karne ke liye handler
+    onServiceDetailClick: (serviceData: any) => void;
     onBookNowClick: (roomData: any) => void; 
     onPolicyClick: () => void; // Policy handler
 }
 
-const RoomCard = ({ room, hotelImages, onMoreInfoClick, onBookNowClick, onPolicyClick }: RoomCardProps) => {
+const RoomCard = ({ room, hotelImages,services, onMoreInfoClick, onBookNowClick, onPolicyClick , onServiceDetailClick }: RoomCardProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
     const price = room.price;
     // Safe check for occupancyConfiguration
     const occupancy = room.occupancyConfiguration || { max_occ: 3 }; 
@@ -40,6 +42,17 @@ const getShortDescription = (text: string, limit = 120) => {
     isLong: true
   };
 };
+
+useEffect(() => {
+  const activeThumb = thumbnailRefs.current[currentImageIndex];
+  if (activeThumb) {
+    activeThumb.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest'
+    });
+  }
+}, [currentImageIndex]);
 
     const goToPrevious = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -80,24 +93,14 @@ const getShortDescription = (text: string, limit = 120) => {
     // --- NEW HELPER FUNCTION: cleanDescription (Revised for no static fallback) ---
     const cleanDescription = (description: string | null | undefined): string => {
         if (!description) {
-            return ''; // Agar data hi nahi hai, toh empty string return karo
+            return '';
         }
     
         let cleanedText = String(description);
-    
-        // 1. Saare HTML tags remove karein (e.g., <p>, <div>)
         cleanedText = cleanedText.replace(/<[^>]*>/g, '');
-    
-        // 2. Specific problematic strings remove karein
         cleanedText = cleanedText.replace(/jkhsmsvskvynkjykkdckdc/g, ''); 
-    
-        // 3. Literal curly braces aur brackets/fragments remove karein
         cleanedText = cleanedText.replace(/\{\}/g, '').replace(/<>/g, '');
-    
-        // 4. Multiple spaces ko single space banao aur trim karo
         cleanedText = cleanedText.replace(/\s\s+/g, ' ').trim();
-    
-        // Agar cleaning ke baad bhi string empty ho jaye, toh empty string return ho jayega.
         return cleanedText; 
     };
 
@@ -108,7 +111,7 @@ const getShortDescription = (text: string, limit = 120) => {
                 {/* Image Carousel Section */}
                 <div className="w-full lg:w-[320px] flex-shrink-0">
                     {/* Main Image */}
-                    <div className="relative h-56 lg:h-52 rounded-xl overflow-hidden mb-2 group">
+                    <div className="relative h-72 lg:h-64 rounded-xl overflow-hidden mb-2 group">
                         <img 
                             src={roomImages[currentImageIndex]} 
                             alt={room.room_type} 
@@ -127,21 +130,35 @@ const getShortDescription = (text: string, limit = 120) => {
                     </div>
 
                     {/* Thumbnail Navigation */}
-                    {roomImages.length > 1 && (
-                        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                            {roomImages.slice(0, 4).map((img, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(idx); }}
-                                    className={`w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
-                                        currentImageIndex === idx ? 'border-green-600 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'
-                                    }`}
-                                >
-                                    <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                                </button>
-                            ))}
-                        </div>
-                    )}
+
+                    {roomImages.length > 1 && (
+                      <div className="flex mt-5 gap-2 overflow-x-auto items-center scrollbar-hide">
+                        {roomImages.map((img, idx) => (
+                          <button
+                            key={idx}
+                            ref={(el) => {
+                              thumbnailRefs.current[idx] = el;
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentImageIndex(idx);
+                            }}
+                            className={`w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+                              currentImageIndex === idx
+                                ? 'border-green-600 opacity-100'
+                                : 'border-transparent opacity-60 hover:opacity-100'
+                            }`}
+                          >
+                            <img
+                              src={img}
+                              alt={`Thumbnail ${idx + 1}`}
+                              className="w-full object-cover block h-full "
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                 </div>
 
                 {/* Room Details Section */}
@@ -200,11 +217,14 @@ const getShortDescription = (text: string, limit = 120) => {
 
                     </div>
 
-                 {/* Pricing Options (Matches Figma Boxes) */}
+{/* Pricing Options (Matches Figma Boxes - Optimized) */}
+{/* Pricing Options - Fully Dynamic Section */}
+
+{/* Pricing Options (Matches Figma Boxes) */}
 <div className="pt-5 border-t border-dashed border-gray-200">
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        {/* Option 1: Base Price (Original) */}
+        {/* Option 1: Base Price (Original "Room Only") */}
         <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] rounded-xl p-4 relative h-full min-h-[120px]">
             <div>
                 <div className="flex items-center justify-between mb-2">
@@ -213,8 +233,8 @@ const getShortDescription = (text: string, limit = 120) => {
                 </div>
                 <div>
                     <div className="flex items-baseline gap-2">
-                        <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
-                        <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.3).toLocaleString()}</span>
+                        <span className="text-green-600 font-bold text-lg">INR {Math.round(basePrice).toLocaleString()}</span>
+                        <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.5).toLocaleString()}</span>
                     </div>
                     <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
                 </div>
@@ -227,65 +247,67 @@ const getShortDescription = (text: string, limit = 120) => {
             </button>
         </div>
 
-        {/* Option 2: 1.2x Price */}
-        <div className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
-            <div>
-                <div className="flex items-center justify-between mb-2">
-                    <div className="font-bold text-gray-900">Room Only</div>
-                    <div onClick={handlePolicyClick} className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
-                </div>
-                <div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-green-600 font-bold text-lg">INR {Math.round(basePrice * 1.2).toLocaleString()}</span>
-                        <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.5).toLocaleString()}</span>
-                    </div>
-                    <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
-                </div>
-            </div>
-            <button 
-                onClick={(e) => handleBookNowClick(e, {
-                    ...room,
-                    price: {
-                        ...room.price,
-                        retail_price: (basePrice * 1.2).toFixed(2),
-                        retail_tax_price: (taxPrice * 1.2).toFixed(2)
-                    }
-                })}
-                className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
-            >
-                BOOK NOW
-            </button>
-        </div>
+        {/* Dynamic Services: Option 2 aur Option 3 yahan se handle honge */}
+        {services && services
+            .filter((s: any) => s.roomTypes?.room_type === room.room_type)
+            .slice(0, 2) // Pehle 2 matching services ko dikhayenge
+            .map((service: any) => {
+                const sRetail = Number(service.price.preTaxRetailPrice) || 0; 
+                const sRack = Number(service.price.preTaxRackRate) || 0;
+                
+                const totalPrice = Number(basePrice) + sRetail; 
+                const totalRack = (Number(basePrice) * 1.5) + sRack;
 
-        {/* Option 3: 1.3x Price */}
-        <div className="hidden md:flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
-            <div>
-                <div className="flex items-center justify-between mb-2">
-                    <div className="font-bold text-gray-900">Boom only</div>
-                    <div onClick={handlePolicyClick} className="text-[11px] text-gray-500 underline cursor-pointer">Inclusions & Policies</div>
-                </div>
-                <div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-green-600 font-bold text-lg">INR {basePrice.toLocaleString()}</span>
-                        <span className="text-gray-400 line-through text-xs">INR {Math.round(basePrice * 1.3).toLocaleString()}</span>
+                return (
+                    <div key={service.id} className="flex flex-col justify-between border hover:border-[#D2A256] hover:bg-[#FFFBF4] border-gray-200 bg-white rounded-xl p-4 relative h-full min-h-[120px] opacity-80 hover:opacity-100 transition-opacity">
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="font-bold text-gray-900">{service.name} Included</div>
+                                {/* Particular Service Details Click */}
+                                <div 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onServiceDetailClick(service);
+                                        
+                                    }} 
+                                    className="text-[11px] text-[#D2A256] underline cursor-pointer"
+                                >
+                                    Details
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-green-600 font-bold text-lg">INR {Math.round(totalPrice).toLocaleString()}</span>
+                                    <span className="text-gray-400 line-through text-xs">INR {Math.round(totalRack).toLocaleString()}</span>
+                                </div>
+                                <div className="text-[10px] text-gray-500 mt-1">Room + {service.name}</div>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={(e) => handleBookNowClick(e, {
+                                ...room,
+                                price: {
+                                    ...room.price,
+                                    retail_price: totalPrice.toFixed(2),
+                                    retail_tax_price: taxPrice.toFixed(2)
+                                },
+                                serviceDetails: service 
+                            })}
+                            className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
+                        >
+                            BOOK NOW
+                        </button>
                     </div>
-                    <div className="text-[10px] text-gray-500 mt-1">(for 1 night) Incl. of taxes & fees</div>
-                </div>
-            </div>
-            <button 
-                onClick={(e) => handleBookNowClick(e, {
-                    ...room,
-                    price: {
-                        ...room.price,
-                        retail_price: (basePrice * 1.2).toFixed(2),
-                        retail_tax_price: (taxPrice * 1.2).toFixed(2)
-                    }
-                })}
-                className="w-full bg-black text-white text-[11px] font-bold uppercase py-3 rounded-lg mt-3 hover:bg-gray-800 transition-colors tracking-wide"
-            >
-                BOOK NOW
-            </button>
-        </div>
+                );
+            })
+        }
+
+        {/* Fallback Empty Box: Agar koi service na mile toh layout khali na lage */}
+        {(!services || services.filter((s: any) => s.roomTypes?.room_type === room.room_type).length === 0) && (
+             <div className="hidden md:flex items-center justify-center border border-dashed border-gray-200 rounded-xl p-4 min-h-[120px] text-gray-400 text-xs text-center">
+                 No additional service bundles available for this room
+             </div>
+        )}
 
     </div>
 </div>

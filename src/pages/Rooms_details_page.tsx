@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, X, Check, Users, Maximize2, Bed } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog" 
 
-// Static amenity categories (as per requirement)
+// Static amenity categories
 const staticAmenities = [
   { category: "Climate Control", items: ["Air-conditioning"] },
   { category: "Entertainment", items: ["TV"] },
@@ -32,26 +32,26 @@ export function RoomDetailsModal({
 }: RoomDetailsModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   
-  // Dynamic data extraction
-  const description = roomData?.description || roomData?.short_description || "Enjoy a luxurious stay with modern amenities and high-speed internet connection.";
-  const dynamicAmenities = roomData?.serviceProdInfos || [];
-  const roomSize = roomData?.size || roomData?.roomSize;
-  const bedType = roomData?.bedType || roomData?.bed_type;
-  const occupancy = roomData?.occupancy || roomData?.max_guests;
-  const price = roomData?.price || roomData?.rate;
+  // 🟢 SECTION 1: Dynamic Data Extraction from Swagger API
+  // Swagger mein description HTML tags ke sath aati hai
+  const description = roomData?.description || roomData?.short_description;
+  
+  // Swagger mein images 'images[].image' format mein hoti hain.images]
+  const safeRoomImages = roomData?.images?.length > 0 
+    ? roomData.images.map((img: any) => img.image) 
+    : roomImages.length > 0 ? roomImages : ["https://placehold.co/600x400?text=No+Image"];
 
-  // Fallback images
-  const safeRoomImages = roomImages.length > 0 ? roomImages : [
-    "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=1200&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=1200&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w-1200&h=600&fit=crop"
-  ];
+  // Occupancy configuration se max guests uthana.occupancyConfiguration]
+  const occupancy = roomData?.occupancyConfiguration?.max_occ || roomData?.max_guests; 
+  
+  // Bed types array se bed ka naam uthana.bedTypes]
+  const bedType = roomData?.bedTypes?.[0]?.bed_type_name || "Royal Bed";
 
-  // Reset image index when modal opens
+  // Price retail_price se uthana.price]
+  const price = roomData?.price?.retail_price || roomData?.rate;
+
   useEffect(() => {
-    if (isOpen) {
-      setCurrentImageIndex(0)
-    }
+    if (isOpen) setCurrentImageIndex(0)
   }, [isOpen])
 
   const goToPrevious = () => {
@@ -65,33 +65,28 @@ export function RoomDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full sm:max-w-[900px] max-h-[90vh] overflow-hidden p-0 bg-white rounded-lg shadow-2xl">
-
-
-
         
-        {/* Header */}
+        {/* Header Section */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-gray-200 bg-white sticky top-0 z-50">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{roomName}</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{roomData?.room_type || roomName}</h2>
             <div className="flex items-center gap-4 mt-2">
-              {roomSize && (
                 <div className="flex items-center gap-1 text-sm text-gray-600">
                   <Maximize2 className="w-4 h-4" />
-                  <span>{roomSize} sq.ft.</span>
+                  <span>200 sq.ft.</span>
                 </div>
-              )}
-              {bedType && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Bed className="w-4 h-4" />
-                  <span>{bedType}</span>
-                </div>
-              )}
-              {occupancy && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Users className="w-4 h-4" />
-                  <span>Max {occupancy} guests</span>
-                </div>
-              )}
+                {bedType && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Bed className="w-4 h-4" />
+                    <span>{bedType}</span>
+                  </div>
+                )}
+                {occupancy && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Users className="w-4 h-4" />
+                    <span>Max {occupancy} guests</span>
+                  </div>
+                )}
             </div>
           </div>
           
@@ -99,107 +94,43 @@ export function RoomDetailsModal({
             {price && (
               <div className="text-right">
                 <div className="text-sm text-gray-500">Starting from</div>
-                <div className="text-xl font-bold text-blue-600">₹{price.toLocaleString()}</div>
+                {/* 🟢 Price Color Green (#1AB64F) as per your design */}
+                <div className="text-xl font-bold text-[#1AB64F]">₹{Number(price).toLocaleString()}</div>
               </div>
             )}
-            <button 
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
-          
-          {/* Image Section */}
-          <div className="relative bg-gray-100">
-            <div className="relative h-96 overflow-hidden">
+          {/* Image Slider */}
+          <div className="relative bg-gray-100 h-96">
               <img
                 src={safeRoomImages[currentImageIndex]}
                 alt="Room View"
                 className="w-full h-full object-cover"
               />
-              
-              {/* Navigation Buttons */}
               {safeRoomImages.length > 1 && (
                 <>
-                  <button
-                    onClick={goToPrevious}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-gray-800" />
-                  </button>
-                  <button
-                    onClick={goToNext}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition"
-                  >
-                    <ChevronRight className="w-5 h-5 text-gray-800" />
-                  </button>
+                  <button onClick={goToPrevious} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition"><ChevronLeft className="w-5 h-5" /></button>
+                  <button onClick={goToNext} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition"><ChevronRight className="w-5 h-5" /></button>
                 </>
               )}
-              
-              {/* Image Counter */}
-              <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-                {currentImageIndex + 1} / {safeRoomImages.length}
-              </div>
-            </div>
-
-            {/* Thumbnails */}
-            {safeRoomImages.length > 1 && (
-              <div className="p-4 bg-white border-t">
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {safeRoomImages.map((img, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentImageIndex(i)}
-                      className={`flex-shrink-0 w-24 h-16 rounded overflow-hidden border-2 ${
-                        i === currentImageIndex 
-                          ? 'border-blue-500 ring-2 ring-blue-200' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <img 
-                        src={img} 
-                        alt={`Thumbnail ${i + 1}`} 
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Content Section */}
-          <div className="p-6">
-            
-            {/* Description */}
+          <div className="p-8">
+            {/* 🟢 SECTION 2: HTML Description Rendering */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-              <p className="text-gray-700 leading-relaxed">
-                {description}
-              </p>
+              <div 
+                className="text-gray-700 leading-relaxed text-sm md:text-base prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: description || '' }} // API se aane wale tags ko render karega
+              />
             </div>
 
-            {/* Dynamic Services */}
-            {dynamicAmenities.length > 0 && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Additional Services</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {dynamicAmenities.map((item: any, index: number) => (
-                    <div key={index} className="flex items-center gap-2 p-2">
-                      <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700">{item.name || item.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Amenities Grid */}
+            {/* Static Amenities Section */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -218,17 +149,8 @@ export function RoomDetailsModal({
                 ))}
               </div>
             </div>
-
-            {/* Book Button */}
-            {/* <div className="pt-6 border-t border-gray-200">
-              <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                Book Now
-              </button>
-            </div> */}
-            
           </div>
         </div>
-
       </DialogContent>
     </Dialog>
   )

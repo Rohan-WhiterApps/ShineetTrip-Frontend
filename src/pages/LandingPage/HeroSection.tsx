@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Calendar, Users, Search, ChevronLeft, ChevronRight, ChevronDown, Plus, Minus, X, Bed } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { LoginModal } from "../Login/Loginpage";
+import { HolidaySearchWidget } from "./searchbars/HolidaySearchWidget";
 
 
 // --- TYPE DEFINITIONS ---
@@ -507,6 +508,10 @@ const handleDestinationClick = (destination: Destination) => {
                 <X size={24} />
               </button>
               
+                {searchTab === "Holiday Packages" ? (
+                <HolidaySearchWidget /> 
+              ) : (
+                <>
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start mb-6 pr-8">
                 <div>
@@ -685,6 +690,8 @@ const handleDestinationClick = (destination: Destination) => {
                   {isFormFilled && <Search size={20} />}
                 </button>
               </div>
+              </>
+              )}
             </div>
           )}
         </div>

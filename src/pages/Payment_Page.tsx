@@ -42,6 +42,10 @@ const BookingPage: React.FC = () => {
     const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
     const [showTimeoutModal, setShowTimeoutModal] = useState(false);
     const [showAuthErrorModal, setShowAuthErrorModal] = useState(false);
+    const paymentTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const paymentCompletedRef = React.useRef(false);
+
+
     
 
     const navigate = useNavigate(); // ✅ FIX 2: useNavigate hook use kiya
@@ -84,6 +88,13 @@ const BookingPage: React.FC = () => {
     console.log("Using API Base:", API_BASE);
     console.log("Create Order URL:", CREATE_ORDER_URL);
 
+const PHONE_RULES: Record<string, { min: number; max: number }> = {
+  '+91': { min: 10, max: 10 }, // India
+  '+1': { min: 10, max: 10 },  // USA
+  '+44': { min: 10, max: 10 }, // UK
+};
+
+const phoneLimit = PHONE_RULES[formData.phoneCode]?.max ?? 15;
 
     // --- NEW HELPER: Validation Logic ---
 const validateForm = () => {
@@ -92,15 +103,19 @@ const validateForm = () => {
     // Regex for basic validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     // Simple phone check: 8 to 15 digits
-    const phoneRegex = /^\d{8,15}$/; 
+    const phone = formData.phone.trim();
+    const countryRule = PHONE_RULES[formData.phoneCode];
     // Basic Name check: letters and spaces only
     const nameRegex = /^[A-Za-z\s]+$/; 
-
-    // 1. Phone Validation (Required + Format)
-    if (!formData.phone.trim()) {
-        errors.phone = "Phone number is required.";
-    } else if (!phoneRegex.test(formData.phone.trim())) {
-        errors.phone = "Please enter a valid phone number (8-15 digits).";
+    
+    if (!phone) {
+    errors.phone = 'Phone number is required.';
+    } else if (!/^\d+$/.test(phone)) {
+      errors.phone = 'Phone number must contain digits only.';
+    } else if (!countryRule) {
+      errors.phone = 'Unsupported country code selected.';
+    } else if (phone.length < countryRule.min || phone.length > countryRule.max) {
+      errors.phone = `Phone number must be exactly ${countryRule.min} digits for ${formData.phoneCode}.`;
     }
 
     // 2. Email Validation (Required + Format)
@@ -287,7 +302,7 @@ console.log("Customer ID check before API:", customerId);
             // ✅ CRITICAL FIX: Functional update for reliable state check
             // Isse isProcessing state ki current value milegi
             setIsProcessing((currentIsProcessing) => {
-            if (!isBookingSuccessful && currentIsProcessing) {
+            if (!paymentCompletedRef.current && currentIsProcessing) {
             setPaymentMessage('Payment window closed. Please try again.');
             return false; // Loader ko band karo
         }
@@ -296,45 +311,17 @@ console.log("Customer ID check before API:", customerId);
     
             setIsRazorpayOpen(false); // Ye to direct set ho sakta hai
         });
-            rzp1.on('modal.close', function() {
-            // Agar payment successful nahi hua hai, toh isProcessing ko reset kar do.
-            if (!isBookingSuccessful) {
-                setPaymentMessage('Payment window closed. Please try again.');
-                setIsProcessing(false); 
-            }
-            setIsRazorpayOpen(false);
-            if (!isBookingSuccessful) {
-                    // Alert dikha kar page ko reload kar do
-                    alert("Payment process cancelled. Please check your details and try again.");
-                    window.location.reload(); 
-                    // Note: isProcessing aur isRazorpayOpen yahan set karne ki zaroorat nahi hai 
-                    // kyunki page reload ho raha hai.
-                }
-        });
             setIsRazorpayOpen(true);
             rzp1.open(); // Open the payment gateway popup
 
-            setTimeout(() => {
-                // ✅ CRITICAL FIX: Functional update use karein
-                setIsProcessing((currentIsProcessing) => {
-                    setIsRazorpayOpen((currentIsRazorpayOpen) => {
-                        // Agar abhi bhi processing TRUE hai, aur modal open flag TRUE hai, aur booking successful nahi hui
-                        if (currentIsProcessing && currentIsRazorpayOpen && !isBookingSuccessful) {
-                            console.warn("Razorpay close event missed. Forcibly resetting state.");
-                            setShowTimeoutModal(true);
-                            setPaymentMessage('Payment window timed out or connection lost. Please try again.');
-                            return false; // isRazorpayOpen ko false karo
-                        }
-                        return currentIsRazorpayOpen; // Agar condition fail, toh state change mat karo
-                    });
-                    
-                    // Agar isProcessing TRUE tha aur humne reset kiya, toh naya state FALSE hoga
-                    if (currentIsProcessing && isRazorpayOpen && !isBookingSuccessful) {
-                        return false;
-                    }
-                    return currentIsProcessing;
-                });
-            }, 3000);
+            paymentTimeoutRef.current = setTimeout(() => {
+   if (!paymentCompletedRef.current) {
+    setShowTimeoutModal(true);
+    setPaymentMessage('Payment window timed out or connection lost. Please try again.');
+    setIsProcessing(false);
+  }
+}, 60000);
+
 
         } catch (error) {
             setPaymentMessage(error instanceof Error ? error.message : 'An unexpected error occurred during payment.');
@@ -373,6 +360,13 @@ console.log("Customer ID check before API:", customerId);
                 console.error("Verification Server Response (400/500):", verificationText); // DEBUG
                 throw new Error(`Payment verification failed on server. Status: ${verifyResponse.status}. Details: ${verificationText}`); // Include details in error message
             }
+            
+            paymentCompletedRef.current = true;
+            // 🛑 STOP ALL TIMEOUT / ERROR WATCHDOGS
+            if (paymentTimeoutRef.current) {
+              clearTimeout(paymentTimeoutRef.current);
+              paymentTimeoutRef.current = null;
+            }
 
             // ✅ SUCCESS STATE CHANGE (Stop automatic navigation)
             setPaymentMessage('Booking successful! Payment successfully verified.');
@@ -386,6 +380,8 @@ console.log("Customer ID check before API:", customerId);
             setIsProcessing(false);
         }
     };
+
+
     
     // Step 4: Mark Order as Failed (for cancellation/failure)
     const markOrderAsFailed = async (orderId: string, errorResponse: any) => {
@@ -529,26 +525,43 @@ console.log("Customer ID check before API:", customerId);
                                     <div className="flex flex-col gap-1"> 
                                         <div className="flex gap-2">
                                             <select
-                                                name="phoneCode"
-                                                value={formData.phoneCode}
-                                                onChange={handleInputChange}
-                                                className={`w-24 px-3 py-2.5 border rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
-                                                disabled={isProcessing}
+                                              name="phoneCode"
+                                              value={formData.phoneCode}
+                                              onChange={(e) => {
+                                                setFormData(prev => ({
+                                                  ...prev,
+                                                  phoneCode: e.target.value,
+                                                  phone: ''          // 🔥 reset
+                                                }));
+                                                setFormErrors(prev => ({ ...prev, phone: '' }));
+                                              }}
                                             >
+
                                                 <option>+91</option>
                                                 <option>+1</option>
                                                 <option>+44</option>
                                             </select>
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                placeholder="Phone Number"
-                                                value={formData.phone}
-                                                onChange={handleInputChange}
-                                                className={`flex-1 px-4 py-2.5 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`} // Conditional border
-                                                disabled={isProcessing}
-                                                required
-                                            />
+                                        <input
+  type="tel"
+  name="phone"
+  value={formData.phone}
+  onChange={(e) => {
+    const onlyDigits = e.target.value.replace(/\D/g, '');
+    const limitedDigits = onlyDigits.slice(0, phoneLimit);
+
+    setFormData(prev => ({
+      ...prev,
+      phone: limitedDigits
+    }));
+  }}
+  maxLength={phoneLimit}
+  placeholder="Phone Number"
+  className={`flex-1 px-4 py-2.5 border rounded ${
+    formErrors.phone ? 'border-red-500' : 'border-gray-300'
+  }`}
+  disabled={isProcessing}
+/>
+
                                         </div>
                                         {/* ✅ Error Display for Phone */}
                                         {formErrors.phone && <span className="text-red-500 text-xs pl-2">{formErrors.phone}</span>} 
@@ -566,6 +579,7 @@ console.log("Customer ID check before API:", customerId);
                                             disabled={isProcessing}
                                             required
                                         />
+
                                         {/* ✅ Error Display for Email */}
                                         {formErrors.email && <span className="text-red-500 text-xs pl-2">{formErrors.email}</span>}
                                     </div>
